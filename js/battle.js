@@ -1,4 +1,4 @@
-// js/battle.js - Boss Battle & High-Inflation Damage Engine
+// js/battle.js - Boss Battle & High-Inflation Damage Engine (Safe & Robust)
 import { sound } from './sound.js';
 import { fx } from './fx.js';
 import { MONSTERS } from './data.js';
@@ -19,9 +19,10 @@ export class BattleManager {
   }
 
   loadMonster() {
-    const stageIdx = (this.app.state.stage - 1) % MONSTERS.length;
-    const baseMonster = MONSTERS[stageIdx];
-    const loopCount = Math.floor((this.app.state.stage - 1) / MONSTERS.length);
+    const stage = (this.app.state && this.app.state.stage) || 1;
+    const stageIdx = (stage - 1) % MONSTERS.length;
+    const baseMonster = MONSTERS[stageIdx] || MONSTERS[0];
+    const loopCount = Math.floor((stage - 1) / MONSTERS.length);
 
     const scaleFactor = Math.pow(3.5, loopCount);
     const maxHp = Math.round(baseMonster.baseHp * scaleFactor);
@@ -29,17 +30,19 @@ export class BattleManager {
     this.isEnraged = false;
     this.currentMonster = {
       ...baseMonster,
-      name: loopCount > 0 ? `極・${baseMonster.name} (Lv.${this.app.state.stage})` : baseMonster.name,
+      name: loopCount > 0 ? `極・${baseMonster.name} (Lv.${stage})` : baseMonster.name,
       maxHp: maxHp,
-      currentHp: this.app.state.bossCurrentHp > 0 && this.app.state.bossCurrentHp <= maxHp
+      currentHp: this.app.state && this.app.state.bossCurrentHp > 0 && this.app.state.bossCurrentHp <= maxHp
         ? this.app.state.bossCurrentHp
         : maxHp,
       rewardGems: Math.round(baseMonster.rewardGems * Math.pow(1.8, loopCount)),
       rewardCoins: Math.round(baseMonster.rewardCoins * Math.pow(1.8, loopCount))
     };
 
-    this.app.state.bossMaxHp = this.currentMonster.maxHp;
-    this.app.state.bossCurrentHp = this.currentMonster.currentHp;
+    if (this.app.state) {
+      this.app.state.bossMaxHp = this.currentMonster.maxHp;
+      this.app.state.bossCurrentHp = this.currentMonster.currentHp;
+    }
     this.renderMonster();
   }
 
@@ -50,11 +53,16 @@ export class BattleManager {
     const shareBossBtn = document.getElementById('battle-share-x-btn');
 
     const handleManualHit = (e) => {
+      if (e) e.preventDefault();
       this.attack(2.0, e, true);
     };
 
-    if (attackBtn) attackBtn.addEventListener('click', handleManualHit);
-    if (monsterTarget) monsterTarget.addEventListener('click', handleManualHit);
+    if (attackBtn) {
+      attackBtn.addEventListener('click', handleManualHit);
+    }
+    if (monsterTarget) {
+      monsterTarget.addEventListener('click', handleManualHit);
+    }
 
     if (shareBossBtn) {
       shareBossBtn.addEventListener('click', () => {
@@ -63,11 +71,13 @@ export class BattleManager {
     }
 
     if (autoToggle) {
-      autoToggle.checked = this.app.state.autoAttackEnabled;
+      autoToggle.checked = !!(this.app.state && this.app.state.autoAttackEnabled);
       autoToggle.addEventListener('change', (e) => {
-        this.app.state.autoAttackEnabled = e.target.checked;
-        this.app.saveState();
-        if (this.app.state.autoAttackEnabled) {
+        if (this.app.state) {
+          this.app.state.autoAttackEnabled = e.target.checked;
+          this.app.saveState();
+        }
+        if (e.target.checked) {
           this.startAutoAttack();
         } else {
           this.stopAutoAttack();
@@ -78,7 +88,7 @@ export class BattleManager {
 
   startAutoAttack() {
     this.stopAutoAttack();
-    if (!this.app.state.autoAttackEnabled) return;
+    if (this.app.state && !this.app.state.autoAttackEnabled) return;
 
     this.autoAttackTimer = setInterval(() => {
       this.attack(1.0, null, false);
@@ -93,36 +103,52 @@ export class BattleManager {
   }
 
   attack(multiplier = 1.0, event = null, isManual = false) {
+    if (!this.currentMonster) {
+      this.loadMonster();
+    }
     if (!this.currentMonster || this.currentMonster.currentHp <= 0) return;
 
-    const atkPower = this.app.gacha.getWeaponAtk(this.app.state.equippedWeaponId);
+    let atkPower = 15;
+    if (this.app && this.app.gacha && typeof this.app.gacha.getWeaponAtk === 'function') {
+      const equippedId = (this.app.state && this.app.state.equippedWeaponId) || 'w_n1';
+      atkPower = this.app.gacha.getWeaponAtk(equippedId);
+    }
+
     let baseAtk = atkPower * multiplier;
 
-    if (this.app.state.isFever) {
+    if (this.app.state && this.app.state.isFever) {
       baseAtk *= 3;
     }
 
     const isCrit = Math.random() < 0.25 || isManual;
-    const finalDamage = Math.round(baseAtk * (isCrit ? (2.5 + Math.random()) : (0.9 + Math.random() * 0.2)));
+    const finalDamage = Math.max(1, Math.round(baseAtk * (isCrit ? (2.5 + Math.random()) : (0.9 + Math.random() * 0.2))));
 
     this.currentMonster.currentHp = Math.max(0, this.currentMonster.currentHp - finalDamage);
-    this.app.state.bossCurrentHp = this.currentMonster.currentHp;
+    if (this.app.state) this.app.state.bossCurrentHp = this.currentMonster.currentHp;
 
-    if (isCrit) {
-      sound.playCritical();
-      fx.screenShake(10, 200);
-    } else {
-      sound.playAttack();
-    }
+    try {
+      if (isCrit) {
+        sound.playCritical();
+        fx.screenShake(10, 200);
+      } else {
+        sound.playAttack();
+      }
+    } catch (e) {}
 
     const targetEl = document.getElementById('monster-avatar');
     if (targetEl) {
       const rect = targetEl.getBoundingClientRect();
-      const x = (event ? event.clientX : rect.left + rect.width / 2) + (Math.random() - 0.5) * 60;
-      const y = (event ? event.clientY : rect.top + rect.height / 3) + (Math.random() - 0.5) * 40;
+      const x = (event && event.clientX ? event.clientX : rect.left + rect.width / 2) + (Math.random() - 0.5) * 60;
+      const y = (event && event.clientY ? event.clientY : rect.top + rect.height / 3) + (Math.random() - 0.5) * 40;
 
       const dmgText = `${isCrit ? '💥 CRITICAL! ' : ''}-${this.app.formatNumber(finalDamage)}`;
-      fx.createFloatingText(x, y, dmgText, isCrit ? '#ff007f' : '#ffd700', isCrit ? 32 : 22, isCrit);
+      try {
+        if (typeof fx.createFloatingText === 'function') {
+          fx.createFloatingText(x, y, dmgText, isCrit ? '#ff007f' : '#ffd700', isCrit ? 32 : 22, isCrit);
+        } else if (typeof fx.createDamagePopup === 'function') {
+          fx.createDamagePopup(x, y, dmgText, isCrit, isCrit ? '#ff007f' : '#ffd700');
+        }
+      } catch (e) {}
 
       targetEl.classList.add('monster-hit');
       setTimeout(() => targetEl.classList.remove('monster-hit'), 150);
@@ -142,8 +168,10 @@ export class BattleManager {
 
   triggerEnrage() {
     this.isEnraged = true;
-    sound.playCritical();
-    fx.flash('rgba(255, 0, 85, 0.5)', 300);
+    try {
+      sound.playCritical();
+      fx.flash('rgba(255, 0, 85, 0.5)', 300);
+    } catch (e) {}
 
     const quoteEl = document.getElementById('monster-quote');
     const avatarEl = document.getElementById('monster-avatar');
@@ -153,33 +181,37 @@ export class BattleManager {
 
   handleDefeat() {
     this.stopAutoAttack();
-    sound.playExplosion();
+    try { sound.playExplosion(); } catch (e) {}
 
     const targetEl = document.getElementById('monster-avatar');
     if (targetEl) {
       const rect = targetEl.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
-      fx.createExplosionFX(x, y);
+      try { fx.createExplosionFX(x, y); } catch (e) {}
       targetEl.classList.add('monster-defeated');
     }
 
-    const mult = this.app.state.isFever ? 2 : 1;
+    const mult = (this.app.state && this.app.state.isFever) ? 2 : 1;
     const earnedGems = this.currentMonster.rewardGems * mult;
     const earnedCoins = this.currentMonster.rewardCoins * mult;
 
-    this.app.state.gems += earnedGems;
-    this.app.state.coins += earnedCoins;
-    this.app.state.stage += 1;
-    this.app.state.totalDefeated += 1;
+    if (this.app.state) {
+      this.app.state.gems = (this.app.state.gems || 0) + earnedGems;
+      this.app.state.coins = (this.app.state.coins || 0) + earnedCoins;
+      this.app.state.stage = (this.app.state.stage || 1) + 1;
+      this.app.state.totalDefeated = (this.app.state.totalDefeated || 0) + 1;
+    }
 
     this.app.checkAchievements();
     this.app.updateHeaderStats();
     this.updateStatsDisplay();
 
     setTimeout(() => {
-      sound.playRainbowFanfare();
-      fx.createRainbowConfetti();
+      try {
+        sound.playRainbowFanfare();
+        fx.createRainbowConfetti();
+      } catch (e) {}
     }, 400);
 
     setTimeout(() => {
@@ -190,10 +222,14 @@ export class BattleManager {
   }
 
   shareBossVictoryOnX() {
-    const stage = this.app.state.stage;
-    const defeated = this.app.state.totalDefeated;
-    const weapon = this.app.gacha.getEquippedWeapon();
-    const atk = this.app.gacha.getWeaponAtk(weapon.id);
+    const stage = (this.app.state && this.app.state.stage) || 1;
+    const defeated = (this.app.state && this.app.state.totalDefeated) || 0;
+    const weapon = (this.app.gacha && typeof this.app.gacha.getEquippedWeapon === 'function')
+      ? this.app.gacha.getEquippedWeapon()
+      : { name: '折れた竹やり', rarity: 'N', id: 'w_n1' };
+    const atk = (this.app.gacha && typeof this.app.gacha.getWeaponAtk === 'function')
+      ? this.app.gacha.getWeaponAtk(weapon.id)
+      : 15;
 
     const text = `⚔️【先延ばし粉砕】DopaTodoで Stage ${stage} に到達！ボスを累計 ${defeated} 体粉砕した！\n現在の愛用武器: [${weapon.rarity}]「${weapon.name}」(ATK:+${this.app.formatNumber(atk)})\n\n#DopaTodo #ドパがき #ToDoアプリ`;
     const url = window.location.href;
@@ -203,6 +239,7 @@ export class BattleManager {
   }
 
   renderMonster() {
+    if (!this.currentMonster) return;
     const avatarEl = document.getElementById('monster-avatar');
     const nameEl = document.getElementById('monster-name');
     const titleEl = document.getElementById('monster-title');
@@ -216,7 +253,7 @@ export class BattleManager {
     if (nameEl) nameEl.textContent = this.currentMonster.name;
     if (titleEl) titleEl.textContent = this.currentMonster.title;
     if (quoteEl) quoteEl.textContent = this.currentMonster.quote;
-    if (stageEl) stageEl.textContent = `STAGE ${this.app.state.stage}`;
+    if (stageEl) stageEl.textContent = `STAGE ${(this.app.state && this.app.state.stage) || 1}`;
 
     this.updateHpBar();
   }
@@ -226,23 +263,29 @@ export class BattleManager {
     const textEl = document.getElementById('boss-hp-text');
 
     if (!this.currentMonster) return;
-    const pct = Math.max(0, Math.min(100, (this.currentMonster.currentHp / this.currentMonster.maxHp) * 100));
+    const maxHp = this.currentMonster.maxHp || 150;
+    const curHp = this.currentMonster.currentHp !== undefined ? this.currentMonster.currentHp : maxHp;
+    const pct = Math.max(0, Math.min(100, (curHp / maxHp) * 100));
 
     if (fillEl) fillEl.style.width = `${pct}%`;
     if (textEl) {
-      textEl.textContent = `HP: ${this.app.formatNumber(this.currentMonster.currentHp)} / ${this.app.formatNumber(this.currentMonster.maxHp)} (${pct.toFixed(1)}%)`;
+      textEl.textContent = `HP: ${this.app.formatNumber(curHp)} / ${this.app.formatNumber(maxHp)} (${pct.toFixed(1)}%)`;
     }
   }
 
   updateStatsDisplay() {
-    const weapon = this.app.gacha ? this.app.gacha.getEquippedWeapon() : { id: 'w_n1' };
-    const atk = this.app.gacha ? this.app.gacha.getWeaponAtk(weapon.id) : 15;
+    const weapon = (this.app.gacha && typeof this.app.gacha.getEquippedWeapon === 'function')
+      ? this.app.gacha.getEquippedWeapon()
+      : { id: 'w_n1' };
+    const atk = (this.app.gacha && typeof this.app.gacha.getWeaponAtk === 'function')
+      ? this.app.gacha.getWeaponAtk(weapon.id)
+      : 15;
     const totalAtkEl = document.getElementById('stat-total-atk');
     const stageEl = document.getElementById('stat-stage');
     const defeatedEl = document.getElementById('stat-defeated');
 
     if (totalAtkEl) totalAtkEl.textContent = this.app.formatNumber(atk);
-    if (stageEl) stageEl.textContent = `Stage ${this.app.state.stage}`;
-    if (defeatedEl) defeatedEl.textContent = `${this.app.state.totalDefeated} 体`;
+    if (stageEl) stageEl.textContent = `Stage ${(this.app.state && this.app.state.stage) || 1}`;
+    if (defeatedEl) defeatedEl.textContent = `${(this.app.state && this.app.state.totalDefeated) || 0} 体`;
   }
 }

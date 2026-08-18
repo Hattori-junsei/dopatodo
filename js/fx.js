@@ -163,8 +163,8 @@ class FXEngine {
     shake();
   }
 
-  // Damage Number Floater
-  createDamagePopup(x, y, text, isCrit = false, color = '#ff0055') {
+  // Damage Number Floater / Floating Text
+  createFloatingText(x, y, text, color = '#ffd700', fontSize = 24, isCrit = false) {
     const container = document.getElementById('damage-container');
     if (!container) return;
 
@@ -174,11 +174,16 @@ class FXEngine {
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
     el.style.color = color;
+    if (fontSize) el.style.fontSize = `${fontSize}px`;
 
     container.appendChild(el);
     setTimeout(() => {
       el.remove();
     }, 900);
+  }
+
+  createDamagePopup(x, y, text, isCrit = false, color = '#ff0055') {
+    this.createFloatingText(x, y, text, color, isCrit ? 32 : 22, isCrit);
   }
 }
 

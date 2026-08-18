@@ -192,11 +192,81 @@
         <div class="settings-label" style="color: #ff0055;">⚠️ 現在のスロットのデータを初期化</div>
         <button id="reset-slot-btn" class="settings-danger-btn" style="width: 100%; margin-top: 4px;">現在のデータを完全リセット</button>
       </div>
+
+      <!-- App Version Info -->
+      <div style="text-align: center; margin-top: 14px; font-size: 10px; color: var(--text-dim);">
+        <span>DopaTodo Version <strong id="settings-app-version" style="color: var(--neon-cyan);">v2.1.0</strong></span>
+        <div style="margin-top: 4px;">
+          <button id="check-update-btn" class="header-btn" style="padding: 3px 8px; font-size: 10px; display: inline-block;">🔄 更新の確認</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's New (Update Release Notes & Gift) Modal -->
+  <div id="whats-new-modal" class="app-modal">
+    <div class="modal-content-box glass-panel whats-new-modal-box">
+      <div class="modal-title">
+        <span id="whats-new-modal-title">🎉 DopaTodo アップデート！</span>
+        <button id="whats-new-modal-close-btn" class="modal-close-icon-btn">✕</button>
+      </div>
+      <div class="whats-new-badge-row">
+        <span id="whats-new-version-pill" class="version-pill">v2.1.0</span>
+        <span class="version-date" id="whats-new-date">2026-08-18</span>
+      </div>
+      <div id="whats-new-features-list" class="whats-new-features-container"></div>
+      <div class="whats-new-gift-box">
+        <div class="whats-new-gift-text">
+          <span>🎁 アップデート記念プレゼント！</span>
+          <strong id="whats-new-gift-amount" style="color: var(--neon-green); font-size: 14px;">💎 +300 GEMS</strong>
+        </div>
+        <button id="claim-update-gift-btn" class="whats-new-claim-btn">受け取る & スタート！</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Due Remind ("これ終わりましたか？") Modal -->
+  <div id="due-remind-modal" class="app-modal">
+    <div class="modal-content-box glass-panel due-remind-box">
+      <div class="due-remind-header">
+        <span class="due-remind-icon">⏰</span>
+        <div class="due-remind-title-wrap">
+          <span class="due-remind-badge">⏰ 締切タイムオーバー通知</span>
+          <h3 class="due-remind-title">このタスク、粉砕できましたか？</h3>
+        </div>
+      </div>
+      <div class="due-task-card glass-panel">
+        <div class="due-task-meta" id="due-remind-meta"></div>
+        <div class="due-task-text" id="due-remind-task-text">タスク内容</div>
+        <div class="due-task-reward" id="due-remind-reward"></div>
+      </div>
+      <div class="due-remind-actions">
+        <button id="due-action-crush-btn" class="due-crush-action-btn">
+          <span>💥</span>
+          <span>粉砕完了！（報酬GET）</span>
+        </button>
+        <button id="due-action-snooze-btn" class="due-snooze-action-btn">
+          <span>⏱️</span>
+          <span>あと15分延長する</span>
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- Main App Root -->
   <div id="app">
+
+    <!-- App Update Available Toast Banner (Realtime PWA Notification) -->
+    <div id="app-update-banner" class="app-update-toast" style="display: none;">
+      <div class="update-toast-content">
+        <span class="update-toast-icon">⚡</span>
+        <div class="update-toast-text">
+          <strong>新バージョンが利用可能です！</strong>
+          <span style="font-size: 10px; color: var(--text-muted);">最新の機能と修正を適用します</span>
+        </div>
+      </div>
+      <button id="apply-update-btn" class="apply-update-btn">今すぐ更新</button>
+    </div>
 
     <!-- PWA Install Promotion Banner -->
     <div id="pwa-install-banner" class="pwa-banner">
@@ -224,6 +294,9 @@
           <span id="header-coins">0</span>
         </div>
         
+        <button id="whats-new-btn" class="header-btn" title="更新情報・パッチノート">
+          <span>📢</span>
+        </button>
         <button id="achievements-btn" class="header-btn" title="実績・トロフィー">
           <span>🏆</span>
           <span id="ach-notification-dot" class="notification-dot"></span>
@@ -279,7 +352,7 @@
         <!-- Tag Filters -->
         <div id="tag-filter-chips" class="tag-filter-container"></div>
 
-        <!-- Integrated Smart Task Input Card -->
+        <!-- Integrated Smart Task Input Card with Quick Due Timer -->
         <div class="task-input-card glass-panel">
           <div class="task-input-main-row">
             <select id="task-diff-inline-select" class="task-diff-select" title="難易度を選択"></select>
@@ -293,8 +366,16 @@
             <input type="text" id="task-input" class="task-input" placeholder="タスクを入力... (Enterで追加)">
             <button id="add-task-btn" class="add-task-btn">+ 追加</button>
           </div>
-          <div class="preset-toggle-row">
-            <button id="toggle-presets-btn" class="toggle-presets-btn">⚡ プリセットから即追加 ▼</button>
+          <div class="task-input-options-row">
+            <div class="due-options-wrap">
+              <span class="due-label">⏰ 締切:</span>
+              <button type="button" class="due-quick-btn active" data-min="0">なし</button>
+              <button type="button" class="due-quick-btn" data-min="15">+15分</button>
+              <button type="button" class="due-quick-btn" data-min="30">+30分</button>
+              <button type="button" class="due-quick-btn" data-min="60">+1時間</button>
+              <input type="time" id="task-due-time-input" class="due-time-picker" title="指定時刻に締切リマインド">
+            </div>
+            <button id="toggle-presets-btn" class="toggle-presets-btn">⚡ プリセット ▼</button>
           </div>
           <div id="presets-collapse-wrap" class="presets-collapse-wrap">
             <div id="preset-tasks-container" class="preset-chips-scroll"></div>

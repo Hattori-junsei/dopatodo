@@ -793,3 +793,204 @@
   color: var(--text-dim);
   font-size: 12px;
 }
+
+/* Task Input Options & Due Timers */
+.task-input-options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.due-options-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.due-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--neon-cyan);
+}
+
+.due-quick-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.due-quick-btn:hover, .due-quick-btn.active {
+  background: rgba(0, 243, 255, 0.2);
+  color: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+}
+
+.due-time-picker {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  font-size: 9.5px;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* Task Due Badges on Cards */
+.due-pill {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 243, 255, 0.15);
+  color: var(--neon-cyan);
+  border: 1px solid rgba(0, 243, 255, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.due-pill.due-warning {
+  background: rgba(255, 215, 0, 0.2);
+  color: var(--neon-gold);
+  border-color: var(--neon-gold);
+  animation: pulse-glow 1s infinite alternate;
+}
+
+.due-pill.due-overdue {
+  background: rgba(255, 0, 85, 0.25);
+  color: #ff0055;
+  border-color: #ff0055;
+  animation: pulse-glow 0.6s infinite alternate;
+}
+
+/* Due Remind Modal ("これ終わりましたか？") */
+.due-remind-box {
+  max-width: 440px;
+  border: 2px solid var(--neon-gold);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.35);
+}
+
+.due-remind-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.due-remind-icon {
+  font-size: 32px;
+  animation: pulse-glow 0.8s infinite alternate;
+}
+
+.due-remind-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.due-remind-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--neon-gold);
+  background: rgba(255, 215, 0, 0.15);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  align-self: flex-start;
+}
+
+.due-remind-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-main);
+}
+
+.due-task-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  border-left: 4px solid var(--neon-cyan);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.due-task-meta {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.due-task-text {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.due-task-reward {
+  font-size: 11px;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.due-remind-actions {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 8px;
+}
+
+.due-crush-action-btn {
+  background: linear-gradient(135deg, #ff0055, #ff5500);
+  border: none;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 13px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.5);
+  transition: all 0.2s ease;
+}
+
+.due-crush-action-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 25px rgba(255, 0, 85, 0.7);
+}
+
+.due-snooze-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 12px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.due-snooze-action-btn:hover {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--neon-gold);
+  border-color: var(--neon-gold);
+}

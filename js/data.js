@@ -1,6 +1,37 @@
 // js/data.js - DopaTodo Master Data & State Schema
 // Supported Recurring Frequencies: daily, weekdays, weekends, weekly, monthly
 
+export const APP_VERSION = '2.1.0';
+
+export const RELEASE_NOTES = {
+  version: '2.1.0',
+  title: '⚡ DopaTodo v2.1 大型アップデート！',
+  date: '2026-08-18',
+  giftGems: 300,
+  features: [
+    {
+      icon: '🔄',
+      title: '複数頻度の定期タスク（週課・月課・平日）',
+      desc: '毎日だけでなく「毎週○曜日」「毎月○日」「平日のみ」の定期日課に対応！画面上に専用ウィジェットも常設されました。'
+    },
+    {
+      icon: '🎰',
+      title: '極上ドーパミンガチャ（キュイン＆昇格フリーズ）',
+      desc: 'パチンコ風キュイン大当り音、プチュン暗転フリーズ、カードめくり時の「まだまだァッ！」サプライズ昇格を搭載！'
+    },
+    {
+      icon: '🛡️',
+      title: 'ToDo画面の揺れ防止＆UIスリム化',
+      desc: 'ToDo画面にいる間は画面揺れを完全停止し集中力アップ！タスク入力欄もスマートに統合されました。'
+    },
+    {
+      icon: '📲',
+      title: 'PWA自動アップデート通知システム',
+      desc: '新機能配信時にワンタップで最新版へシームレスに更新できるようになりました。'
+    }
+  ]
+};
+
 export const DIFFICULTIES = {
   1: { level: 1, stars: '★', label: '10秒ドパ', gems: 20, coins: 40, color: '#00ff88', bg: 'rgba(0, 255, 136, 0.15)' },
   2: { level: 2, stars: '★★', label: 'イージー', gems: 50, coins: 100, color: '#00d2ff', bg: 'rgba(0, 210, 255, 0.15)' },

@@ -540,3 +540,179 @@ body {
     display: flex;
   }
 }
+
+/* App Update Notification Toast (Realtime PWA Banner) */
+.app-update-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 500px;
+  background: linear-gradient(135deg, rgba(10, 20, 40, 0.95), rgba(20, 10, 35, 0.95));
+  border: 1px solid var(--neon-cyan);
+  box-shadow: 0 8px 30px rgba(0, 243, 255, 0.35);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  z-index: 10005;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  animation: slide-down-toast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slide-down-toast {
+  0% { transform: translate(-50%, -100%); opacity: 0; }
+  100% { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.update-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.update-toast-icon {
+  font-size: 20px;
+  color: var(--neon-gold);
+  animation: pulse-glow 1s infinite alternate;
+}
+
+.update-toast-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.update-toast-text strong {
+  font-size: 12px;
+  color: var(--neon-cyan);
+  font-weight: 800;
+}
+
+.apply-update-btn {
+  background: linear-gradient(135deg, var(--neon-cyan), #0088ff);
+  border: none;
+  color: #07070d;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+.apply-update-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--neon-cyan);
+}
+
+/* What's New Release Notes Modal */
+.whats-new-modal-box {
+  max-width: 480px;
+}
+
+.whats-new-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.version-pill {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+  color: #07070d;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.version-date {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.whats-new-features-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+.whats-new-feature-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  border-left: 3px solid var(--neon-cyan);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.whats-new-feature-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.whats-new-feature-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.whats-new-feature-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.whats-new-feature-desc {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.whats-new-gift-box {
+  background: radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.12), rgba(10, 15, 25, 0.8));
+  border: 1px solid rgba(0, 255, 136, 0.4);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.whats-new-gift-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.whats-new-claim-btn {
+  background: linear-gradient(135deg, var(--neon-green), #00cc66);
+  border: none;
+  color: #07070d;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 11px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.whats-new-claim-btn:hover {
+  transform: scale(1.05);
+}

@@ -1,4 +1,4 @@
-// js/todo.js - Multi-Frequency Routines, Always-Visible Routine Widget, 5-Star Difficulty & Dopamine Tasks
+// js/todo.js - Multi-Frequency Routines, Due Reminders ("これ終わりましたか？"), 5-Star Difficulty & Dopamine Tasks
 import { sound } from './sound.js';
 import { fx } from './fx.js';
 import { PRESET_TASKS, TASK_TAGS, DIFFICULTIES } from './data.js';
@@ -11,7 +11,10 @@ export class TodoManager {
     this.focusTimeRemaining = 0;
     this.isFocusTimerActive = false;
     this.selectedDifficulty = 2; // Default 2-star
+    this.selectedDueMinutes = 0;
     this.routineCheckInterval = null;
+    this.dueCheckInterval = null;
+    this.activeRemindTask = null;
   }
 
   init() {
@@ -21,14 +24,21 @@ export class TodoManager {
     this.renderTasks();
     this.renderRoutineWidget();
     this.setupEventListeners();
+    this.setupDueOptionsUI();
+    this.setupDueRemindModal();
     this.updateComboUI();
     this.setupFocusTimerUI();
     this.setupRoutineManager();
 
-    // Auto-check routines on startup
+    // Auto-check routines and due reminders
     this.checkAndApplyRoutines();
+    this.checkDueReminders();
+
     if (this.routineCheckInterval) clearInterval(this.routineCheckInterval);
-    this.routineCheckInterval = setInterval(() => this.checkAndApplyRoutines(), 60000);
+    this.routineCheckInterval = setInterval(() => {
+      this.checkAndApplyRoutines();
+      this.checkDueReminders();
+    }, 30000); // Check every 30s
   }
 
   setupEventListeners() {
@@ -41,14 +51,31 @@ export class TodoManager {
     const logModal = document.getElementById('log-modal');
     const presetToggleBtn = document.getElementById('toggle-presets-btn');
     const presetsSection = document.getElementById('presets-collapse-wrap');
+    const timePicker = document.getElementById('task-due-time-input');
 
     const handleAdd = () => {
       const text = input.value.trim();
       if (!text) return;
       const tag = tagSelect ? tagSelect.value : 'work';
       const diff = diffSelect ? parseInt(diffSelect.value, 10) : this.selectedDifficulty;
-      this.addTask(text, diff, tag);
+
+      let dueTimestamp = null;
+      if (timePicker && timePicker.value) {
+        const [hours, mins] = timePicker.value.split(':').map(Number);
+        const target = new Date();
+        target.setHours(hours, mins, 0, 0);
+        if (target.getTime() <= Date.now()) {
+          target.setDate(target.getDate() + 1); // Tomorrow if time already passed
+        }
+        dueTimestamp = target.getTime();
+      } else if (this.selectedDueMinutes > 0) {
+        dueTimestamp = Date.now() + this.selectedDueMinutes * 60 * 1000;
+      }
+
+      this.addTask(text, diff, tag, null, dueTimestamp);
       input.value = '';
+      if (timePicker) timePicker.value = '';
+      this.resetDueButtons();
       sound.playTap();
     };
 
@@ -90,6 +117,39 @@ export class TodoManager {
         }
       });
     }
+  }
+
+  setupDueOptionsUI() {
+    const quickBtns = document.querySelectorAll('.due-quick-btn');
+    const timePicker = document.getElementById('task-due-time-input');
+
+    quickBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        quickBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.selectedDueMinutes = parseInt(btn.dataset.min, 10);
+        if (timePicker) timePicker.value = '';
+        sound.playTap();
+      });
+    });
+
+    if (timePicker) {
+      timePicker.addEventListener('change', () => {
+        if (timePicker.value) {
+          quickBtns.forEach(b => b.classList.remove('active'));
+          this.selectedDueMinutes = 0;
+          sound.playTap();
+        }
+      });
+    }
+  }
+
+  resetDueButtons() {
+    this.selectedDueMinutes = 0;
+    const quickBtns = document.querySelectorAll('.due-quick-btn');
+    quickBtns.forEach(b => {
+      b.classList.toggle('active', b.dataset.min === '0');
+    });
   }
 
   renderDifficultySelector() {
@@ -157,7 +217,7 @@ export class TodoManager {
     });
   }
 
-  addTask(text, difficultyLevel = 2, tag = 'work', routineId = null) {
+  addTask(text, difficultyLevel = 2, tag = 'work', routineId = null, dueTimestamp = null) {
     const diffObj = DIFFICULTIES[difficultyLevel] || DIFFICULTIES[2];
     const newTask = {
       id: 't_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -167,6 +227,8 @@ export class TodoManager {
       coins: diffObj.coins,
       tag,
       routineId: routineId,
+      dueTimestamp: dueTimestamp,
+      dueReminded: false,
       pinned: false,
       completed: false,
       createdAt: Date.now()
@@ -256,6 +318,27 @@ export class TodoManager {
     });
   }
 
+  // --- Format Due Time Badges ---
+  getDueBadgeHtml(task) {
+    if (!task.dueTimestamp) return '';
+
+    const now = Date.now();
+    const diffMs = task.dueTimestamp - now;
+    const diffMins = Math.round(diffMs / 60000);
+
+    if (diffMs < 0) {
+      return '<span class="due-pill due-overdue">⚠️ 締切超過！</span>';
+    } else if (diffMins <= 15) {
+      return `<span class="due-pill due-warning">🔥 締切直前！(残${diffMins}分)</span>`;
+    } else if (diffMins < 60) {
+      return `<span class="due-pill">⏰ 残${diffMins}分</span>`;
+    } else {
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      return `<span class="due-pill">⏰ 残${hours}時間${mins > 0 ? `${mins}分` : ''}</span>`;
+    }
+  }
+
   renderTasks() {
     const list = document.getElementById('todo-list');
     const emptyNotice = document.getElementById('todo-empty');
@@ -268,9 +351,12 @@ export class TodoManager {
       activeTasks = activeTasks.filter(t => t.tag === this.app.state.currentTagFilter);
     }
 
-    // Sort: Pinned first, then routines, then normal
+    // Sort: Pinned first, then overdue/urgent due tasks, then routines, then newest
     activeTasks.sort((a, b) => {
       if (a.pinned !== b.pinned) return b.pinned ? 1 : -1;
+      if (a.dueTimestamp && b.dueTimestamp) return a.dueTimestamp - b.dueTimestamp;
+      if (a.dueTimestamp) return -1;
+      if (b.dueTimestamp) return 1;
       if (!!a.routineId !== !!b.routineId) return a.routineId ? -1 : 1;
       return b.createdAt - a.createdAt;
     });
@@ -293,7 +379,7 @@ export class TodoManager {
         const displayGems = Math.round(task.gems * mult);
         const displayCoins = Math.round(task.coins * mult);
 
-        // Find routine info if available
+        // Routine Badge
         let routineBadgeText = '🔄 日課';
         if (isRoutine && Array.isArray(this.app.state.routines)) {
           const rObj = this.app.state.routines.find(r => r.id === task.routineId);
@@ -301,6 +387,8 @@ export class TodoManager {
             routineBadgeText = `🔄 ${this.getRoutineFreqLabel(rObj)}`;
           }
         }
+
+        const dueBadgeHtml = this.getDueBadgeHtml(task);
 
         item.innerHTML = `
           <div class="todo-left-stripe" style="background: ${diffObj.color};"></div>
@@ -313,6 +401,7 @@ export class TodoManager {
                 ${tagObj.icon} ${tagObj.label}
               </span>
               ${isRoutine ? `<span class="routine-pill">${routineBadgeText}</span>` : ''}
+              ${dueBadgeHtml}
               ${task.pinned ? '<span class="pinned-pill">⭐ 最優先</span>' : ''}
               ${this.isFocusTimerActive ? '<span class="speed-pill">⚡ 1.5x</span>' : ''}
             </div>
@@ -372,17 +461,20 @@ export class TodoManager {
     }
   }
 
-  completeTask(task, element, event) {
-    if (element.classList.contains('shattering')) return;
-    element.classList.add('shattering');
+  completeTask(task, element = null, event = null) {
+    if (element && element.classList.contains('shattering')) return;
+    if (element) element.classList.add('shattering');
 
-    const rect = element.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
 
     sound.playShatter();
     fx.createShatterFX(x, y);
-    fx.screenShake(12, 250);
 
     const mult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
     const earnedGems = Math.round(task.gems * mult);
@@ -438,43 +530,131 @@ export class TodoManager {
     }, 300);
   }
 
-  // --- Multi-Frequency Recurring Routines (Daily, Weekdays, Weekends, Weekly, Monthly) ---
+  // --- Due Reminder Engine ("これ終わりましたか？") ---
+  checkDueReminders() {
+    if (!this.app.state.tasks || !Array.isArray(this.app.state.tasks)) return;
+
+    const now = Date.now();
+    const dueTask = this.app.state.tasks.find(t => !t.completed && t.dueTimestamp && t.dueTimestamp <= now && !t.dueReminded);
+
+    if (dueTask) {
+      dueTask.dueReminded = true;
+      this.app.saveState();
+      this.triggerDueReminder(dueTask);
+    }
+  }
+
+  triggerDueReminder(task) {
+    this.activeRemindTask = task;
+    sound.playRainbowFanfare();
+
+    // 1. Show In-App Modal
+    const modal = document.getElementById('due-remind-modal');
+    const taskTextEl = document.getElementById('due-remind-task-text');
+    const metaEl = document.getElementById('due-remind-meta');
+    const rewardEl = document.getElementById('due-remind-reward');
+
+    const diffObj = DIFFICULTIES[task.difficulty || 2] || DIFFICULTIES[2];
+    const tagObj = TASK_TAGS.find(t => t.id === task.tag) || { label: '一般', icon: '📝', color: '#00f3ff' };
+
+    if (taskTextEl) taskTextEl.textContent = task.text;
+    if (metaEl) {
+      metaEl.innerHTML = `
+        <span class="task-diff-pill" style="border-color: ${diffObj.color}; color: ${diffObj.color};">${diffObj.stars} ${diffObj.label}</span>
+        <span class="task-category-pill" style="border-color: ${tagObj.color}; color: ${tagObj.color};">${tagObj.icon} ${tagObj.label}</span>
+      `;
+    }
+    if (rewardEl) {
+      rewardEl.innerHTML = `<span class="reward-gem">💎 +${task.gems} GEMS</span> <span class="reward-coin">🪙 +${task.coins} COINS</span>`;
+    }
+
+    if (modal) modal.classList.add('active');
+
+    // 2. Web Notification API (Browser / OS Push)
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          new Notification('⏰【DopaTodo 締切リマインド】', {
+            body: `「${task.text}」の締切時間になりました！粉砕完了できましたか？💥`,
+            icon: './icons/icon-192.svg'
+          });
+        } catch (e) {}
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    }
+  }
+
+  setupDueRemindModal() {
+    const modal = document.getElementById('due-remind-modal');
+    const crushBtn = document.getElementById('due-action-crush-btn');
+    const snoozeBtn = document.getElementById('due-action-snooze-btn');
+
+    if (crushBtn) {
+      crushBtn.addEventListener('click', () => {
+        if (!this.activeRemindTask) return;
+        const task = this.activeRemindTask;
+        if (modal) modal.classList.remove('active');
+
+        // Find element on screen if present
+        const el = document.querySelector(`.todo-item[data-id="${task.id}"]`);
+        this.completeTask(task, el);
+        this.activeRemindTask = null;
+      });
+    }
+
+    if (snoozeBtn) {
+      snoozeBtn.addEventListener('click', () => {
+        if (!this.activeRemindTask) return;
+        // Snooze 15 minutes
+        this.activeRemindTask.dueTimestamp = Date.now() + 15 * 60 * 1000;
+        this.activeRemindTask.dueReminded = false;
+        this.app.saveState();
+
+        sound.playTap();
+        alert(`⏱️ 締切を15分延長しました！残り時間で一気に粉砕しよう！`);
+        if (modal) modal.classList.remove('active');
+        this.activeRemindTask = null;
+        this.renderTasks();
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    }
+  }
+
+  // --- Multi-Frequency Recurring Routines ---
   checkAndApplyRoutines() {
     if (!this.app.state.routines || !Array.isArray(this.app.state.routines)) return;
 
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-    const dayOfWeek = now.getDay(); // 0:Sun, 1:Mon, ..., 6:Sat
-    const dayOfMonth = now.getDate(); // 1-31
+    const dayOfWeek = now.getDay();
+    const dayOfMonth = now.getDate();
     const currentHourMin = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
     let addedCount = 0;
     this.app.state.routines.forEach(r => {
       if (!r.enabled) return;
 
-      // Duplicate prevention rule: If active uncompleted task with this routineId exists, DO NOT duplicate!
       const alreadyPending = (this.app.state.tasks || []).some(t => t.routineId === r.id && !t.completed);
-      if (alreadyPending) {
-        return;
-      }
+      if (alreadyPending) return;
 
-      // Check if already added today
       if (r.lastAddedDate === today) return;
-
-      // Check scheduled time
       if (currentHourMin < (r.time || '00:00')) return;
 
-      // Check frequency condition
       const freq = r.freqType || 'daily';
       let isDue = false;
 
-      if (freq === 'daily') {
-        isDue = true;
-      } else if (freq === 'weekdays') {
-        isDue = (dayOfWeek >= 1 && dayOfWeek <= 5);
-      } else if (freq === 'weekends') {
-        isDue = (dayOfWeek === 0 || dayOfWeek === 6);
-      } else if (freq === 'weekly') {
+      if (freq === 'daily') isDue = true;
+      else if (freq === 'weekdays') isDue = (dayOfWeek >= 1 && dayOfWeek <= 5);
+      else if (freq === 'weekends') isDue = (dayOfWeek === 0 || dayOfWeek === 6);
+      else if (freq === 'weekly') {
         const targetDay = (r.freqDay !== undefined && r.freqDay !== null) ? parseInt(r.freqDay, 10) : 1;
         isDue = (dayOfWeek === targetDay);
       } else if (freq === 'monthly') {
@@ -505,7 +685,6 @@ export class TodoManager {
     const freqSubContainer = document.getElementById('routine-freq-sub-wrap');
     const freqSubSelect = document.getElementById('routine-freq-sub-select');
 
-    // Safe Open Routine Modal Helper
     const openRoutineModal = () => {
       if (modal) {
         modal.classList.add('active');
@@ -518,7 +697,6 @@ export class TodoManager {
       }
     };
 
-    // Bind by both IDs and global click delegation
     const openBtn1 = document.getElementById('open-routine-modal-btn');
     const openBtn2 = document.getElementById('open-routine-modal-btn-inline');
 
@@ -548,7 +726,6 @@ export class TodoManager {
       });
     }
 
-    // Dynamic frequency sub-selector (Weekday vs Day-of-month)
     const updateFreqSubUI = () => {
       if (!freqSelect || !freqSubContainer || !freqSubSelect) return;
       const freq = freqSelect.value;
@@ -651,7 +828,6 @@ export class TodoManager {
       const tagObj = TASK_TAGS.find(t => t.id === r.tag) || { label: '一般', icon: '📝' };
       const freqLabel = this.getRoutineFreqLabel(r);
 
-      // Status check
       const isPending = (this.app.state.tasks || []).some(t => t.routineId === r.id && !t.completed);
       let statusHtml = '';
       if (!r.enabled) {

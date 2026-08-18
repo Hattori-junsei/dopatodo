@@ -1,0 +1,25 @@
+{
+  "name": "DopaTodo - ドパがき専用 ToDo × ガチャ × ワンパン爽快RPG",
+  "short_name": "DopaTodo",
+  "description": "タスクを粉砕して脳汁を出せ！ToDoでガチャ石を稼ぎ、最強武器で先延ばしモンスターをワンパン討伐する新感覚ToDoアプリ。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#07070d",
+  "theme_color": "#07070d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "games", "lifestyle"]
+}

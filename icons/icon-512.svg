@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg-grad-lg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07070f"/>
+      <stop offset="50%" stop-color="#121226"/>
+      <stop offset="100%" stop-color="#1f1f3a"/>
+    </linearGradient>
+    <linearGradient id="bolt-grad-lg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f3ff"/>
+      <stop offset="50%" stop-color="#00ff88"/>
+      <stop offset="100%" stop-color="#ffd700"/>
+    </linearGradient>
+    <filter id="neon-glow-lg" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bg-grad-lg)" stroke="#00f3ff" stroke-width="6" stroke-opacity="0.7"/>
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#ff007f" stroke-width="5" stroke-dasharray="20 14" opacity="0.8"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#00f3ff" stroke-width="2" opacity="0.4"/>
+  <path d="M280 75 L150 270 L245 270 L230 435 L362 240 L267 240 Z" fill="url(#bolt-grad-lg)" filter="url(#neon-glow-lg)"/>
+</svg>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DopaTodo - ドパがき専用 ToDo × ガチャ × ワンパン爽快RPG</title>
+  <meta name="description" content="タスクを粉砕して脳汁を出せ！ToDoでガチャ石を稼ぎ、最強武器で先延ばしモンスターをワンパン討伐する新感覚ToDoアプリ。">
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#07070d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DopaTodo">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Open Graph / OGP (Twitter & SNS) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DopaTodo - ドパがき専用 ToDo × ガチャ × ワンパン爽快RPG">
+  <meta property="og:description" content="タスクを粉砕して脳汁を出せ！ToDoでガチャ石を稼ぎ、最強武器で先延ばしモンスターをワンパン討伐する新感覚ToDoアプリ。">
+  <meta property="og:image" content="icons/icon-512.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DopaTodo - ドパがき専用 ToDo × ガチャ × ワンパン爽快RPG">
+  <meta name="twitter:description" content="タスクをこなして脳汁を出せ！ToDo粉砕でガチャ石を稼ぎ、最強武器で先延ばしモンスターをワンパン討伐！">
+  <meta name="twitter:image" content="icons/icon-512.svg">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/todo.css">
+  <link rel="stylesheet" href="css/battle.css">
+  <link rel="stylesheet" href="css/gacha.css">
+</head>
+<body>
+
+  <!-- Visual FX Canvas & Overlays -->
+  <canvas id="fx-canvas"></canvas>
+  <div id="flash-overlay"></div>
+  <div id="damage-container"></div>
+
+  <!-- Cinematic Gacha Summoning Overlay -->
+  <div id="gacha-animation-overlay">
+    <div id="gacha-portal-core" class="portal-core step-blue">🌀</div>
+    <div id="gacha-cutin-text" class="gacha-cutin-msg">CONNECTING TO DOPAMINE REALM...</div>
+  </div>
+
+  <!-- Gacha Result Modal (3D Card Flip) -->
+  <div id="gacha-result-modal">
+    <div class="gacha-result-content glass-panel">
+      <h2 class="result-title">✨ SUMMON RESULTS ✨</h2>
+      <div id="gacha-cards-container" class="gacha-cards-grid"></div>
+      <div class="gacha-modal-actions">
+        <button id="gacha-skip-flip-btn" class="gacha-skip-btn">⚡ 一括オープン (SKIP)</button>
+        <button id="gacha-share-x-btn" class="gacha-share-btn">𝕏 結果をポスト</button>
+        <button id="gacha-result-close-btn" class="gacha-close-btn">OK (最強装備)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily/Weekly/Monthly Routine Management Modal -->
+  <div id="routine-modal" class="app-modal">
+    <div class="modal-content-box glass-panel">
+      <div class="modal-title">
+        <span>🔄 定期ルーティン設定（毎日 / 毎週 / 毎月）</span>
+        <button id="routine-modal-close-btn" class="modal-close-icon-btn">✕</button>
+      </div>
+
+      <!-- Add New Routine Form -->
+      <div class="routine-create-box">
+        <div class="settings-label">⚡ 新しい定期タスクを登録</div>
+        <div style="margin-bottom: 6px;">
+          <input type="text" id="routine-text-input" class="task-input" style="width: 100%;" placeholder="例: 筋トレ20分、週報提出、月末棚卸し...">
+        </div>
+        <div class="routine-input-row">
+          <select id="routine-freq-select" class="task-diff-select" title="頻度を選択">
+            <option value="daily">毎日</option>
+            <option value="weekdays">平日のみ (月〜金)</option>
+            <option value="weekends">土日のみ</option>
+            <option value="weekly">毎週○曜日</option>
+            <option value="monthly">毎月○日</option>
+          </select>
+          <div id="routine-freq-sub-wrap" style="display: none;">
+            <select id="routine-freq-sub-select" class="task-diff-select"></select>
+          </div>
+          <select id="routine-diff-select" class="task-diff-select">
+            <option value="1">★ 10秒 (+💎20)</option>
+            <option value="2">★★ イージー (+💎50)</option>
+            <option value="3" selected>★★★ ノーマル (+💎120)</option>
+            <option value="4">★★★★ ハード (+💎300)</option>
+            <option value="5">★★★★★ ボス級 (+💎800)</option>
+          </select>
+          <select id="routine-tag-select" class="task-tag-select">
+            <option value="health">💪 健康</option>
+            <option value="study">📚 勉強</option>
+            <option value="work">💼 仕事</option>
+            <option value="life">🏠 生活</option>
+            <option value="easy">🔥 10秒</option>
+          </select>
+          <input type="time" id="routine-time-input" value="08:00" class="task-diff-select">
+          <button id="add-routine-btn" class="add-task-btn">+ 登録</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span class="settings-label" style="margin: 0;">📋 登録済みの定期タスク（未完了時は二重追加されません）</span>
+        <button id="sync-routine-btn" class="settings-action-btn" style="padding: 4px 8px; font-size: 10px;">今すぐ同期チェック</button>
+      </div>
+      <div id="routine-items-list" class="routine-items-container"></div>
+    </div>
+  </div>
+
+  <!-- Completed Log Modal -->
+  <div id="log-modal" class="app-modal">
+    <div class="modal-content-box glass-panel">
+      <div class="modal-title">
+        <span>📜 本日の討伐記録（粉砕ログ）</span>
+        <button id="log-modal-close-btn" class="modal-close-icon-btn">✕</button>
+      </div>
+      <div class="log-summary-box">
+        <div class="log-sum-item">
+          <div class="log-sum-label">本日粉砕</div>
+          <div id="log-today-count" class="log-sum-val">0 個</div>
+        </div>
+        <div class="log-sum-item">
+          <div class="log-sum-label">獲得ジェム</div>
+          <div id="log-today-gems" class="log-sum-val">💎 +0</div>
+        </div>
+        <div class="log-sum-item">
+          <div class="log-sum-label">獲得コイン</div>
+          <div id="log-today-coins" class="log-sum-val">🪙 +0</div>
+        </div>
+      </div>
+      <div id="log-items-list" class="log-items-container"></div>
+    </div>
+  </div>
+
+  <!-- Achievements Modal -->
+  <div id="achievements-modal" class="app-modal">
+    <div class="modal-content-box glass-panel">
+      <div class="modal-title">
+        <span>🏆 実績 & トロフィー</span>
+        <button id="achievements-modal-close-btn" class="modal-close-icon-btn">✕</button>
+      </div>
+      <div id="achievements-list" class="achievements-grid"></div>
+    </div>
+  </div>
+
+  <!-- Settings & Save Slots Modal -->
+  <div id="settings-modal" class="app-modal">
+    <div class="modal-content-box glass-panel">
+      <div class="modal-title">
+        <span>⚙️ 設定 ＆ セーブデータ管理</span>
+        <button id="settings-modal-close-btn" class="modal-close-icon-btn">✕</button>
+      </div>
+
+      <!-- Save Slot Selector -->
+      <div class="settings-section-row">
+        <div class="settings-label">💾 セーブデータスロット切替</div>
+        <div class="settings-control-row">
+          <span style="font-size: 11px; color: var(--text-muted);">1台で複数アカウントを切替</span>
+          <select id="slot-select" class="settings-select">
+            <option value="1">スロット 1（メイン）</option>
+            <option value="2">スロット 2（サブ）</option>
+            <option value="3">スロット 3（仕事用）</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Data Transfer -->
+      <div class="settings-section-row">
+        <div class="settings-label">📲 データ引き継ぎ（スマホ⇄PC同期）</div>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button id="export-data-btn" class="settings-action-btn" style="flex: 1;">引き継ぎコード発行</button>
+          <button id="import-data-btn" class="settings-action-btn" style="flex: 1;">コード読込・復元</button>
+        </div>
+      </div>
+
+      <!-- Haptics -->
+      <div class="settings-section-row">
+        <div class="settings-label">📳 スマホの触覚振動（バイブレーション）</div>
+        <div class="settings-control-row">
+          <span style="font-size: 11px; color: var(--text-muted);">粉砕・ガチャ時の振動</span>
+          <label class="switch">
+            <input type="checkbox" id="haptics-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="settings-section-row" style="border: none;">
+        <div class="settings-label" style="color: #ff0055;">⚠️ 現在のスロットのデータを初期化</div>
+        <button id="reset-slot-btn" class="settings-danger-btn" style="width: 100%; margin-top: 4px;">現在のデータを完全リセット</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Root -->
+  <div id="app">
+
+    <!-- PWA Install Promotion Banner -->
+    <div id="pwa-install-banner" class="pwa-banner">
+      <span class="pwa-banner-text">⚡ ホーム画面に追加してアプリとして起動！</span>
+      <button id="pwa-install-btn" class="pwa-install-btn">追加</button>
+    </div>
+    
+    <!-- Top Header -->
+    <header class="app-header glass-panel">
+      <div class="brand-area">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-title-wrap">
+          <h1 class="brand-title">DopaTodo</h1>
+          <span class="brand-subtitle">BRAINROT BUSTER <span id="header-slot-badge" style="color: var(--neon-cyan); margin-left: 4px;">Slot 1</span></span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="currency-badge currency-gem" title="Dopa Gems (ガチャ用)">
+          <span>💎</span>
+          <span id="header-gems">0</span>
+        </div>
+        <div class="currency-badge currency-coin" title="Coins (武器強化用)">
+          <span>🪙</span>
+          <span id="header-coins">0</span>
+        </div>
+        
+        <button id="achievements-btn" class="header-btn" title="実績・トロフィー">
+          <span>🏆</span>
+          <span id="ach-notification-dot" class="notification-dot"></span>
+        </button>
+        <button id="sound-toggle-btn" class="header-btn active" title="効果音">🔊</button>
+        <button id="bgm-toggle-btn" class="header-btn" title="BGM">🎵</button>
+        <button id="settings-btn" class="header-btn" title="設定・セーブデータ">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Main 3-Column / Tabbed Grid -->
+    <main class="main-content-grid">
+
+      <!-- ================= 1. ToDo Section (Clean & Structured UI) ================= -->
+      <section id="section-todo" class="app-section active">
+        <div class="section-header">
+          <h2 class="section-title"><span>📝</span> DOPA TODO</h2>
+          <div style="display: flex; gap: 6px;">
+            <button id="open-routine-modal-btn" class="header-btn" style="padding: 4px 8px; font-size: 11px;">🔄 定期日課</button>
+            <button id="view-log-btn" class="header-btn" style="padding: 4px 8px; font-size: 11px;">📜 討伐ログ</button>
+          </div>
+        </div>
+
+        <!-- Fever / Combo Banner -->
+        <div class="fever-container glass-panel">
+          <div class="fever-top-row">
+            <span id="combo-display" class="combo-badge">0 COMBO</span>
+            <span style="font-size: 10px; color: var(--text-muted);">連続粉砕でFEVER! (報酬2倍)</span>
+          </div>
+          <div class="fever-gauge-track">
+            <div id="fever-gauge-fill" class="fever-gauge-fill"></div>
+          </div>
+          <div id="fever-time-display" class="fever-time-text" style="display: none;"></div>
+        </div>
+
+        <!-- Focus Timer Bar (Time Attack) -->
+        <div class="focus-timer-section">
+          <span class="focus-timer-label">⏱️ タイムアタック:</span>
+          <div class="focus-timer-presets">
+            <button class="focus-timer-preset-btn" data-min="3">3分</button>
+            <button class="focus-timer-preset-btn" data-min="5">5分</button>
+            <button class="focus-timer-preset-btn" data-min="15">15分</button>
+          </div>
+        </div>
+
+        <!-- Active Focus Timer Banner -->
+        <div id="focus-timer-active-bar" class="focus-timer-active-bar">
+          <span style="font-size: 11px; color: var(--neon-pink); font-weight: 800;">🔥 集中モード発動中！ (石1.5倍)</span>
+          <span id="focus-timer-clock" class="focus-clock-display">00:00</span>
+          <button id="focus-timer-stop-btn" class="focus-stop-btn">終了</button>
+        </div>
+
+        <!-- Tag Filters -->
+        <div id="tag-filter-chips" class="tag-filter-container"></div>
+
+        <!-- Integrated Smart Task Input Card -->
+        <div class="task-input-card glass-panel">
+          <div class="task-input-main-row">
+            <select id="task-diff-inline-select" class="task-diff-select" title="難易度を選択"></select>
+            <select id="task-tag-select" class="task-tag-select" title="ジャンルを選択">
+              <option value="work">💼 仕事</option>
+              <option value="study">📚 勉強</option>
+              <option value="life">🏠 生活</option>
+              <option value="health">💪 健康</option>
+              <option value="easy">🔥 10秒</option>
+            </select>
+            <input type="text" id="task-input" class="task-input" placeholder="タスクを入力... (Enterで追加)">
+            <button id="add-task-btn" class="add-task-btn">+ 追加</button>
+          </div>
+          <div class="preset-toggle-row">
+            <button id="toggle-presets-btn" class="toggle-presets-btn">⚡ プリセットから即追加 ▼</button>
+          </div>
+          <div id="presets-collapse-wrap" class="presets-collapse-wrap">
+            <div id="preset-tasks-container" class="preset-chips-scroll"></div>
+          </div>
+        </div>
+
+        <!-- Dedicated On-Screen Routine Widget (Always Visible) -->
+        <div class="routine-widget-card glass-panel">
+          <div class="routine-widget-header">
+            <div class="routine-widget-title">
+              <span>🔄</span>
+              <span>定期ルーティン（日課・週課・月課）</span>
+            </div>
+            <button id="open-routine-modal-btn-inline" class="routine-settings-btn">⚙️ 設定・新規登録</button>
+          </div>
+          <div id="routine-widget-chips" class="routine-widget-chips"></div>
+        </div>
+
+        <!-- Task List Header -->
+        <div class="task-list-title-row">
+          <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">📋 現在のToDoタスク（粉砕待機中）:</span>
+        </div>
+
+        <!-- Task List -->
+        <div id="todo-list" class="todo-list-container"></div>
+        <div id="todo-empty" class="todo-empty-state" style="display: none;">
+          <span class="empty-icon">🎉</span>
+          <p>全タスク粉砕完了！ドパミン全開！<br>上の入力欄またはプリセットからタスクを追加しよう！</p>
+        </div>
+      </section>
+
+
+      <!-- ================= 2. Battle Section ================= -->
+      <section id="section-battle" class="app-section">
+        <div class="section-header">
+          <h2 class="section-title"><span>⚔️</span> BOSS BATTLE</h2>
+          <div class="auto-toggle-wrap">
+            <span>オート攻撃</span>
+            <label class="switch">
+              <input type="checkbox" id="auto-attack-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="battle-arena glass-panel">
+          <div class="battle-header-info">
+            <div id="battle-stage-display" class="stage-badge">STAGE 1</div>
+            <button id="battle-share-x-btn" class="boss-share-btn">𝕏 討伐をポスト</button>
+          </div>
+
+          <div id="monster-title" class="boss-title">【無限通知の亡霊】</div>
+          <h3 id="monster-name" class="boss-name">SNSスライム</h3>
+          <div id="monster-quote" class="boss-quote-bubble">「ちょっとTwitter見るだけでしょ…？」</div>
+
+          <!-- Monster Avatar -->
+          <div id="monster-avatar-container" class="monster-avatar-container">
+            <div id="monster-avatar" class="monster-avatar">📱</div>
+          </div>
+
+          <!-- HP Bar -->
+          <div class="boss-hp-container">
+            <div class="boss-hp-track">
+              <div id="boss-hp-fill" class="boss-hp-fill"></div>
+            </div>
+            <div id="boss-hp-text" class="boss-hp-text">HP: 150 / 150 (100%)</div>
+          </div>
+
+          <!-- Big Attack Button -->
+          <div class="battle-action-row">
+            <button id="battle-attack-btn" class="huge-attack-btn">
+              <span>💥</span>
+              <span>覚醒ドパパンチ！(2倍撃)</span>
+            </button>
+          </div>
+
+          <!-- Battle Summary Stats -->
+          <div class="battle-stats-grid">
+            <div class="battle-stat-box">
+              <div class="stat-label">総攻撃力</div>
+              <div id="stat-total-atk" class="stat-value">15</div>
+            </div>
+            <div class="battle-stat-box">
+              <div class="stat-label">進行度</div>
+              <div id="stat-stage" class="stat-value">Stage 1</div>
+            </div>
+            <div class="battle-stat-box">
+              <div class="stat-label">討伐数</div>
+              <div id="stat-defeated" class="stat-value">0 体</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ================= 3. Gacha & Weapons Section ================= -->
+      <section id="section-gacha" class="app-section">
+        <div class="section-header">
+          <h2 class="section-title"><span>🎰</span> DOPA GACHA</h2>
+          <span style="font-size: 11px; color: var(--neon-gold);">UR: 1.0% | SSR: 4.0%</span>
+        </div>
+
+        <!-- Gacha Portal Panel -->
+        <div class="gacha-portal-panel glass-panel">
+          <div class="gacha-banner-art">
+            <div id="gacha-panel-portal-core" class="portal-core step-blue">🌌</div>
+            <div class="gacha-banner-title">神話兵器 覚醒召喚</div>
+            <div class="gacha-banner-desc">ToDoで集めたDopa Gemsで最強武器を召喚＆被りで限界突破！</div>
+          </div>
+
+          <div class="gacha-btn-grid">
+            <button id="gacha-single-btn" class="gacha-pull-btn gacha-single">
+              <span class="btn-pull-title">単発召喚</span>
+              <span class="btn-pull-cost">💎 100 GEMS</span>
+            </button>
+            <button id="gacha-multi-btn" class="gacha-pull-btn gacha-multi">
+              <span class="btn-pull-title">🔥 10連召喚 (SR確定)</span>
+              <span class="btn-pull-cost">💎 900 GEMS (1回分お得)</span>
+            </button>
+          </div>
+          <div class="gacha-rates-text">N: 60% | R: 25% | SR: 10% | SSR: 4% | UR: 1%</div>
+        </div>
+
+        <!-- Current Equipped Weapon -->
+        <div class="equipped-weapon-card glass-panel">
+          <div class="equipped-header">
+            <span>⚡ 現在の装備武器</span>
+            <span id="equipped-rarity" class="rarity-tag rarity-n">N</span>
+          </div>
+          <div class="equipped-body">
+            <div id="equipped-icon" class="equipped-icon">🎋</div>
+            <div class="equipped-details">
+              <div class="equipped-name-row">
+                <span id="equipped-name" class="equipped-name">折れた竹やり</span>
+                <span id="equipped-level-badge" class="inv-level-tag">Lv.1</span>
+              </div>
+              <div id="equipped-atk" class="equipped-atk">ATK: +15</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory List -->
+        <div class="section-header" style="margin-top: 8px;">
+          <h3 class="section-title" style="font-size: 13px;"><span>🎒</span> 武器庫（コインで強化＆装備）</h3>
+        </div>
+        <div id="inventory-list" class="inventory-container"></div>
+      </section>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-nav-bar">
+      <button class="nav-tab-btn active" data-tab="todo">
+        <span class="tab-icon">📝</span>
+        <span>ToDo</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="battle">
+        <span class="tab-icon">⚔️</span>
+        <span>バトル</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="gacha">
+        <span class="tab-icon">🎰</span>
+        <span>ガチャ</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -542,6 +542,102 @@ class SoundEngine {
       this.bgmInterval = null;
     }
   }
+  // 17. Reward Roulette Tick (カチカチ音)
+  playRouletteTick() {
+    if (!this.soundEnabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.04);
+  }
+
+  // 18. Jackpot Hit (大当り確定音)
+  playJackpotHit() {
+    this.vibrateJackpot();
+    if (!this.soundEnabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    // Rising power chord
+    const freqSets = [523.25, 659.25, 783.99, 1046.50, 1318.51, 2093.00];
+    freqSets.forEach((f, i) => {
+      const t = this.ctx.currentTime + i * 0.055;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = i < 3 ? 'sawtooth' : 'triangle';
+      osc.frequency.setValueAtTime(f, t);
+      gain.gain.setValueAtTime(0.3, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.35);
+    });
+  }
+
+  // 19. Lever pull down sound (ガチャレバー引き音)
+  playLeverPull() {
+    this.vibrateHeavy();
+    if (!this.soundEnabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    // Mechanical clunk descend
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.25);
+
+    // Mechanical noise burst
+    const bufferSize = this.ctx.sampleRate * 0.1;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const ng = this.ctx.createGain();
+    ng.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    ng.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+    noise.connect(ng);
+    ng.connect(this.ctx.destination);
+    noise.start();
+    noise.stop(this.ctx.currentTime + 0.1);
+  }
+
+  // 20. Slot spin spinning (スロット回転音)
+  playSlotSpin() {
+    if (!this.soundEnabled) return;
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(200, this.ctx.currentTime + 0.6);
+    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.6);
+  }
 }
 
 export const sound = new SoundEngine();

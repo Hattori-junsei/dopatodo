@@ -118,6 +118,31 @@ class FXEngine {
     }
   }
 
+  // 5. Slash Beam & Hit Sparks for Battle Attack (超ド派手な斬撃・火花)
+  createHitFX(x, y, isCrit = false) {
+    // Slash beam line
+    const slashAngle = (Math.random() - 0.5) * 0.8 - Math.PI / 4;
+    const slashLength = isCrit ? 140 : 80;
+    const slashColor = isCrit ? '#ff007f' : '#00f3ff';
+    this.particles.push(new SlashParticle(x, y, slashAngle, slashLength, slashColor, isCrit ? 0.35 : 0.25));
+
+    // Sparks explosion
+    const count = isCrit ? 30 : 14;
+    const colors = isCrit ? ['#ff007f', '#ffaa00', '#ffffff', '#ffd700'] : ['#00f3ff', '#ffffff', '#00ff88', '#ffd700'];
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (isCrit ? 250 : 140) + Math.random() * (isCrit ? 500 : 300);
+      const size = 3 + Math.random() * (isCrit ? 6 : 4);
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const life = 0.3 + Math.random() * 0.4;
+
+      this.particles.push(new HitSparkParticle(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed, size, color, life));
+    }
+
+    // Impact ring wave
+    this.particles.push(new ImpactRingParticle(x, y, isCrit ? '#ff007f' : '#00f3ff', isCrit ? 90 : 55, isCrit ? 0.4 : 0.3));
+  }
+
   // Screen Flash
   flash(color = 'rgba(255, 255, 255, 0.8)', duration = 200) {
     const el = document.getElementById('flash-overlay');
@@ -143,7 +168,6 @@ class FXEngine {
 
     const start = performance.now();
     const shake = () => {
-      // Check again during shake animation in case user switched to ToDo
       if (todoSection && todoSection.classList.contains('active')) {
         app.style.transform = 'translate(0px, 0px)';
         return;
@@ -163,27 +187,158 @@ class FXEngine {
     shake();
   }
 
-  // Damage Number Floater / Floating Text
-  createFloatingText(x, y, text, color = '#ffd700', fontSize = 24, isCrit = false) {
+  // Ultra-Rich Dopamine Damage Popup (超ド迫力ダメージ表記)
+  createFloatingText(x, y, text, color = '#ffd700', fontSize = 28, isCrit = false, comboHits = 0) {
     const container = document.getElementById('damage-container');
     if (!container) return;
 
     const el = document.createElement('div');
-    el.className = `damage-popup ${isCrit ? 'is-crit' : ''}`;
-    el.textContent = text;
+    el.className = `damage-popup ${isCrit ? 'is-crit' : 'is-normal'}`;
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
-    el.style.color = color;
-    if (fontSize) el.style.fontSize = `${fontSize}px`;
+
+    let comboBadgeHtml = '';
+    if (comboHits > 1) {
+      comboBadgeHtml = `<span class="damage-combo-badge">${comboHits} CHAIN!</span>`;
+    }
+
+    if (isCrit) {
+      el.innerHTML = `
+        <div class="damage-crit-header">⚡ CRITICAL HIT! ⚡</div>
+        <div class="damage-num-wrap">
+          <span class="damage-prefix">💥</span>
+          <span class="damage-num" style="color: ${color}; font-size: ${fontSize || 42}px;">${text}</span>
+          ${comboBadgeHtml}
+        </div>
+      `;
+    } else {
+      el.innerHTML = `
+        <div class="damage-num-wrap">
+          <span class="damage-prefix">⚔️</span>
+          <span class="damage-num" style="color: ${color}; font-size: ${fontSize || 26}px;">${text}</span>
+          ${comboBadgeHtml}
+        </div>
+      `;
+    }
 
     container.appendChild(el);
     setTimeout(() => {
-      el.remove();
-    }, 900);
+      if (el.parentNode) el.remove();
+    }, 1100);
   }
 
-  createDamagePopup(x, y, text, isCrit = false, color = '#ff0055') {
-    this.createFloatingText(x, y, text, color, isCrit ? 32 : 22, isCrit);
+  createDamagePopup(x, y, text, isCrit = false, color = '#ff0055', comboHits = 0) {
+    this.createFloatingText(x, y, text, color, isCrit ? 42 : 26, isCrit, comboHits);
+  }
+}
+
+// --- Particle Classes ---
+class SlashParticle {
+  constructor(x, y, angle, length, color, life) {
+    this.x = x;
+    this.y = y;
+    this.angle = angle;
+    this.length = length;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+  }
+
+  update(dt) {
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    const alpha = Math.max(0, this.life / this.maxLife);
+    ctx.globalAlpha = alpha;
+
+    // Glowing thick blade slash
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 6 * alpha;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.moveTo(-this.length / 2, 0);
+    ctx.lineTo(this.length / 2, 0);
+    ctx.stroke();
+
+    // White core line
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2 * alpha;
+    ctx.beginPath();
+    ctx.moveTo(-this.length / 2, 0);
+    ctx.lineTo(this.length / 2, 0);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
+class HitSparkParticle {
+  constructor(x, y, vx, vy, size, color, life) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.size = size;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vy += 300 * dt; // gravity
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    const alpha = Math.max(0, this.life / this.maxLife);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+class ImpactRingParticle {
+  constructor(x, y, color, maxRadius, life) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.maxRadius = maxRadius;
+    this.life = life;
+    this.maxLife = life;
+  }
+
+  update(dt) {
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    const progress = 1 - (this.life / this.maxLife);
+    const alpha = Math.max(0, this.life / this.maxLife);
+    const radius = this.maxRadius * Math.pow(progress, 0.5);
+
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 4 * (1 - progress);
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 }
 

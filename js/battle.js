@@ -9,6 +9,8 @@ export class BattleManager {
     this.autoAttackTimer = null;
     this.currentMonster = null;
     this.isEnraged = false;
+    this.comboHits = 0;
+    this.lastHitTime = 0;
   }
 
   init() {
@@ -108,6 +110,15 @@ export class BattleManager {
     }
     if (!this.currentMonster || this.currentMonster.currentHp <= 0) return;
 
+    // Track combo hits
+    const now = Date.now();
+    if (now - this.lastHitTime < 1500) {
+      this.comboHits++;
+    } else {
+      this.comboHits = 1;
+    }
+    this.lastHitTime = now;
+
     let atkPower = 15;
     if (this.app && this.app.gacha && typeof this.app.gacha.getWeaponAtk === 'function') {
       const equippedId = (this.app.state && this.app.state.equippedWeaponId) || 'w_n1';
@@ -126,33 +137,41 @@ export class BattleManager {
     this.currentMonster.currentHp = Math.max(0, this.currentMonster.currentHp - finalDamage);
     if (this.app.state) this.app.state.bossCurrentHp = this.currentMonster.currentHp;
 
-    try {
-      if (isCrit) {
-        sound.playCritical();
-        fx.screenShake(10, 200);
-      } else {
-        sound.playAttack();
-      }
-    } catch (e) {}
-
     const targetEl = document.getElementById('monster-avatar');
+    let hitX = window.innerWidth / 2;
+    let hitY = window.innerHeight * 0.35;
+
     if (targetEl) {
       const rect = targetEl.getBoundingClientRect();
-      const x = (event && event.clientX ? event.clientX : rect.left + rect.width / 2) + (Math.random() - 0.5) * 60;
-      const y = (event && event.clientY ? event.clientY : rect.top + rect.height / 3) + (Math.random() - 0.5) * 40;
-
-      const dmgText = `${isCrit ? '💥 CRITICAL! ' : ''}-${this.app.formatNumber(finalDamage)}`;
-      try {
-        if (typeof fx.createFloatingText === 'function') {
-          fx.createFloatingText(x, y, dmgText, isCrit ? '#ff007f' : '#ffd700', isCrit ? 32 : 22, isCrit);
-        } else if (typeof fx.createDamagePopup === 'function') {
-          fx.createDamagePopup(x, y, dmgText, isCrit, isCrit ? '#ff007f' : '#ffd700');
-        }
-      } catch (e) {}
+      hitX = (event && event.clientX ? event.clientX : rect.left + rect.width / 2) + (Math.random() - 0.5) * 50;
+      hitY = (event && event.clientY ? event.clientY : rect.top + rect.height / 3) + (Math.random() - 0.5) * 30;
 
       targetEl.classList.add('monster-hit');
       setTimeout(() => targetEl.classList.remove('monster-hit'), 150);
     }
+
+    try {
+      if (isCrit) {
+        sound.playCritical();
+        fx.screenShake(12, 220);
+        fx.flash('rgba(255, 0, 127, 0.25)', 150);
+      } else {
+        sound.playAttack();
+      }
+
+      // Visual Slash & Sparks Particle FX
+      if (typeof fx.createHitFX === 'function') {
+        fx.createHitFX(hitX, hitY, isCrit);
+      }
+
+      // Ultra-Rich Damage Floating Text
+      const dmgFormatted = `-${this.app.formatNumber(finalDamage)}`;
+      if (typeof fx.createDamagePopup === 'function') {
+        fx.createDamagePopup(hitX, hitY, dmgFormatted, isCrit, isCrit ? '#ff007f' : '#ffd700', this.comboHits);
+      } else if (typeof fx.createFloatingText === 'function') {
+        fx.createFloatingText(hitX, hitY, dmgFormatted, isCrit ? '#ff007f' : '#ffd700', isCrit ? 42 : 26, isCrit, this.comboHits);
+      }
+    } catch (e) {}
 
     // Check Boss Enrage Mode (HP < 30%)
     if (!this.isEnraged && this.currentMonster.currentHp > 0 && (this.currentMonster.currentHp / this.currentMonster.maxHp) <= 0.3) {

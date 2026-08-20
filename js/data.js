@@ -1,43 +1,38 @@
 // js/data.js - DopaTodo Master Data & State Schema
 // Supported Recurring Frequencies: daily, weekdays, weekends, weekly, monthly
 
-export const APP_VERSION = '2.1.0';
+export const APP_VERSION = '2.2.0';
 
 export const RELEASE_NOTES = {
-  version: '2.1.0',
-  title: '⚡ DopaTodo v2.1 大型アップデート！',
-  date: '2026-08-18',
+  version: '2.2.0',
+  title: '💥 DopaTodo v2.2 ドーパミン戦闘＆報酬ルーレット解禁！',
+  date: '2026-08-20',
   giftGems: 300,
   features: [
     {
-      icon: '🔄',
-      title: '複数頻度の定期タスク（週課・月課・平日）',
-      desc: '毎日だけでなく「毎週○曜日」「毎月○日」「平日のみ」の定期日課に対応！画面上に専用ウィジェットも常設されました。'
+      icon: '⚔️',
+      title: '極限ドーパミン・バトルダメージ表記',
+      desc: '3Dポップアップ、鮮烈ネオングロー、斬撃スラッシュ光線、火花パーティクル、コンボチェインバッジを完全搭載！'
+    },
+    {
+      icon: '🎲',
+      title: 'タスク粉砕報酬ルーレット ＆ レンジ抽選',
+      desc: 'タスク完了時にカチカチ数字が回るルーレットが出現！最大値付近を引くとJACKPOT大当り演出が炸裂！'
     },
     {
       icon: '🎰',
-      title: '極上ドーパミンガチャ（キュイン＆昇格フリーズ）',
-      desc: 'パチンコ風キュイン大当り音、プチュン暗転フリーズ、カードめくり時の「まだまだァッ！」サプライズ昇格を搭載！'
-    },
-    {
-      icon: '🛡️',
-      title: 'ToDo画面の揺れ防止＆UIスリム化',
-      desc: 'ToDo画面にいる間は画面揺れを完全停止し集中力アップ！タスク入力欄もスマートに統合されました。'
-    },
-    {
-      icon: '📲',
-      title: 'PWA自動アップデート通知システム',
-      desc: '新機能配信時にワンタップで最新版へシームレスに更新できるようになりました。'
+      title: 'ガチャ演出強化（レバー引き ＆ 全画面カットイン）',
+      desc: 'ガチャボタンのレバー引きアニメ、10連スロットスクロール、SSR/UR確定時の大迫力全画面カットインを搭載！'
     }
   ]
 };
 
 export const DIFFICULTIES = {
-  1: { level: 1, stars: '★', label: '10秒ドパ', gems: 20, coins: 40, color: '#00ff88', bg: 'rgba(0, 255, 136, 0.15)' },
-  2: { level: 2, stars: '★★', label: 'イージー', gems: 50, coins: 100, color: '#00d2ff', bg: 'rgba(0, 210, 255, 0.15)' },
-  3: { level: 3, stars: '★★★', label: 'ノーマル', gems: 120, coins: 250, color: '#ffd700', bg: 'rgba(255, 215, 0, 0.15)' },
-  4: { level: 4, stars: '★★★★', label: 'ハード', gems: 300, coins: 600, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
-  5: { level: 5, stars: '★★★★★', label: 'ボス級', gems: 800, coins: 1600, color: '#ff007f', bg: 'rgba(255, 0, 127, 0.2)' }
+  1: { level: 1, stars: '★',      label: '10秒ドパ', gems: 20,  coins: 40,   gemsMin: 10,  gemsMax: 40,   coinsMin: 20,  coinsMax: 80,   color: '#00ff88', bg: 'rgba(0, 255, 136, 0.15)' },
+  2: { level: 2, stars: '★★',    label: 'イージー', gems: 50,  coins: 100,  gemsMin: 30,  gemsMax: 100,  coinsMin: 60,  coinsMax: 200,  color: '#00d2ff', bg: 'rgba(0, 210, 255, 0.15)' },
+  3: { level: 3, stars: '★★★',  label: 'ノーマル', gems: 120, coins: 250,  gemsMin: 60,  gemsMax: 240,  coinsMin: 120, coinsMax: 500,  color: '#ffd700', bg: 'rgba(255, 215, 0, 0.15)' },
+  4: { level: 4, stars: '★★★★', label: 'ハード',   gems: 300, coins: 600,  gemsMin: 150, gemsMax: 600,  coinsMin: 300, coinsMax: 1200, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
+  5: { level: 5, stars: '★★★★★',label: 'ボス級',  gems: 800, coins: 1600, gemsMin: 400, gemsMax: 1600, coinsMin: 800, coinsMax: 3200, color: '#ff007f', bg: 'rgba(255, 0, 127, 0.2)' }
 };
 
 export const RARITIES = {

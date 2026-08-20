@@ -33,6 +33,296 @@
   box-shadow: 0 0 25px var(--neon-cyan);
 }
 
+.gacha-close-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px var(--neon-cyan);
+}
+
+/* =====================================================
+   LEVER PULL ANIMATION (レバー引き演出)
+   ===================================================== */
+.gacha-pull-btn.lever-pulling {
+  animation: lever-pull-anim 0.28s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+  pointer-events: none;
+}
+
+@keyframes lever-pull-anim {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(6px) scale(0.95) rotate(-2deg); }
+  60%  { transform: translateY(12px) scale(0.9) rotate(-4deg); }
+  80%  { transform: translateY(8px) scale(0.93) rotate(-2deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+
+/* =====================================================
+   SLOT SCROLL PREVIEW (10連スロット演出)
+   ===================================================== */
+.gacha-slot-preview {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  animation: slot-appear 0.15s ease-out;
+}
+
+@keyframes slot-appear {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.slot-icon {
+  font-size: 36px;
+  display: inline-block;
+  animation: slot-spin-icon 0.08s linear infinite;
+  text-shadow: 0 0 10px rgba(255,255,255,0.8);
+}
+
+@keyframes slot-spin-icon {
+  0%   { transform: translateY(0) scaleY(1); opacity: 1; }
+  40%  { transform: translateY(-6px) scaleY(0.6); opacity: 0.4; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+/* =====================================================
+   FULL-SCREEN RARITY CUTIN (SSR/UR 全画面カットイン)
+   ===================================================== */
+.gacha-rarity-cutin {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: rarity-cutin-enter 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             rarity-cutin-exit 0.35s ease-in 1.1s forwards;
+  overflow: hidden;
+}
+
+.rarity-cutin-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  animation: cutin-bg-sweep 0.3s ease-out forwards;
+}
+
+@keyframes cutin-bg-sweep {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+
+.rarity-cutin-text {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 8vw, 60px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-align: center;
+  animation: cutin-text-pop 0.3s 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  z-index: 1;
+}
+
+.rarity-cutin-sub {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(12px, 3vw, 20px);
+  font-weight: 700;
+  letter-spacing: 3px;
+  opacity: 0.9;
+  margin-top: 8px;
+  animation: cutin-text-pop 0.3s 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  z-index: 1;
+}
+
+.rarity-cutin-sparks {
+  position: relative;
+  font-size: 24px;
+  letter-spacing: 12px;
+  margin-top: 20px;
+  animation: sparks-dance 0.4s ease-in-out infinite alternate, cutin-text-pop 0.3s 0.3s both;
+  z-index: 1;
+}
+
+/* SSR specific */
+.rarity-cutin-ssr .rarity-cutin-text {
+  color: #ff007f;
+  text-shadow: 0 0 20px #ff007f, 0 0 60px #ffd700, 0 0 100px #ffffff;
+}
+.rarity-cutin-ssr .rarity-cutin-sub { color: #ffd700; }
+.rarity-cutin-ssr .rarity-cutin-sparks { color: #ff007f; }
+.rarity-cutin-ssr .rarity-cutin-bg {
+  background: radial-gradient(ellipse at center, rgba(255,0,127,0.35) 0%, rgba(0,0,0,0.92) 70%);
+}
+
+/* UR specific */
+.rarity-cutin-ur .rarity-cutin-text {
+  color: #00ff88;
+  text-shadow: 0 0 20px #00ff88, 0 0 60px #00f3ff, 0 0 120px #ffffff;
+  animation: cutin-text-pop 0.3s 0.1s both, rainbow-text-cycle 1s infinite;
+}
+.rarity-cutin-ur .rarity-cutin-sub { color: #00f3ff; }
+.rarity-cutin-ur .rarity-cutin-sparks { color: #00ff88; animation: sparks-dance 0.25s ease-in-out infinite alternate, cutin-text-pop 0.3s 0.3s both; }
+.rarity-cutin-ur .rarity-cutin-bg {
+  background: radial-gradient(ellipse at center, rgba(0,255,136,0.3) 0%, rgba(255,0,127,0.15) 40%, rgba(0,0,0,0.92) 70%);
+}
+
+@keyframes rainbow-text-cycle {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes cutin-text-pop {
+  from { transform: scale(0.4) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes sparks-dance {
+  from { transform: scale(1) rotate(-3deg); opacity: 0.8; }
+  to   { transform: scale(1.1) rotate(3deg); opacity: 1; }
+}
+
+@keyframes rarity-cutin-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes rarity-cutin-exit {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.1); }
+}
+
+/* =====================================================
+   REWARD ROULETTE POPUP (タスク報酷ルーレット)
+   ===================================================== */
+#reward-roulette-popup {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px) scale(0.9);
+  background: rgba(10, 10, 20, 0.95);
+  border: 2px solid var(--diff-color, #00f3ff);
+  border-radius: 16px;
+  padding: 12px 24px;
+  z-index: 8000;
+  text-align: center;
+  pointer-events: none;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 20px var(--diff-color, #00f3ff), 0 8px 32px rgba(0,0,0,0.5);
+  animation: roulette-popup-enter 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  min-width: 180px;
+}
+
+#reward-roulette-popup.is-jackpot {
+  border-color: #ffd700;
+  box-shadow: 0 0 30px #ffd700, 0 0 60px #ff007f, 0 8px 32px rgba(0,0,0,0.6);
+  animation: roulette-popup-enter 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             jackpot-border-pulse 0.6s ease-in-out 0.4s infinite alternate;
+}
+
+#reward-roulette-popup.settled-jackpot {
+  animation: jackpot-settled-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             jackpot-border-pulse 0.5s ease-in-out 0.3s infinite alternate;
+}
+
+#reward-roulette-popup.fading-out {
+  animation: roulette-fade-out 0.5s ease-out forwards !important;
+}
+
+@keyframes roulette-popup-enter {
+  from { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.8); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@keyframes jackpot-settled-pop {
+  0%   { transform: translateX(-50%) scale(1); }
+  50%  { transform: translateX(-50%) scale(1.12); }
+  100% { transform: translateX(-50%) scale(1.05); }
+}
+
+@keyframes jackpot-border-pulse {
+  from { box-shadow: 0 0 20px #ffd700, 0 0 40px #ff007f; }
+  to   { box-shadow: 0 0 40px #ffd700, 0 0 80px #ff007f, 0 0 120px #00ff88; }
+}
+
+@keyframes roulette-fade-out {
+  from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(0.85); }
+}
+
+.roulette-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.roulette-jackpot-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 0 10px #ffd700, 0 0 20px #ff007f;
+  margin-bottom: 6px;
+  animation: jackpot-title-bounce 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes jackpot-title-bounce {
+  from { transform: scale(1) rotate(-1deg); }
+  to   { transform: scale(1.08) rotate(1deg); }
+}
+
+.roulette-gems-row,
+.roulette-coins-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.roulette-gems-row {
+  color: #00d2ff;
+  text-shadow: 0 0 8px #00d2ff;
+}
+
+.roulette-coins-row {
+  color: #ffd700;
+  text-shadow: 0 0 8px #ffd700;
+}
+
+.roulette-unit {
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+#reward-roulette-popup.is-jackpot .roulette-gems-row {
+  font-size: 26px;
+  color: #00ff88;
+  text-shadow: 0 0 12px #00ff88, 0 0 24px #ffd700;
+}
+
+#reward-roulette-popup.is-jackpot .roulette-coins-row {
+  font-size: 22px;
+}
+
+/* Task card reward display: show range hint */
+.todo-reward-badge .reward-range {
+  font-size: 8px;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
 .portal-core.step-yellow {
   background: radial-gradient(circle, var(--neon-gold), #ff8800, transparent);
   box-shadow: 0 0 35px var(--neon-gold), inset 0 0 20px #ffffff;

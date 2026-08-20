@@ -26,19 +26,23 @@ export class GachaManager {
     const shareXBtn = document.getElementById('gacha-share-x-btn');
     const animOverlay = document.getElementById('gacha-animation-overlay');
 
-    if (singleBtn) {
-      singleBtn.addEventListener('click', (e) => {
+    // Helper: lever pull animation on a button
+    const addLeverAnim = (btn, callback) => {
+      if (!btn) return;
+      btn.addEventListener('click', (e) => {
         e.preventDefault();
-        this.roll(1);
+        // Visual lever-pull animation
+        btn.classList.add('lever-pulling');
+        try { sound.playLeverPull(); } catch(e2) {}
+        setTimeout(() => {
+          btn.classList.remove('lever-pulling');
+          callback();
+        }, 280);
       });
-    }
+    };
 
-    if (multiBtn) {
-      multiBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.roll(10);
-      });
-    }
+    addLeverAnim(singleBtn, () => this.roll(1));
+    addLeverAnim(multiBtn, () => this.roll(10));
 
     if (closeResultBtn) {
       closeResultBtn.addEventListener('click', () => {
@@ -231,6 +235,7 @@ export class GachaManager {
     const overlay = document.getElementById('gacha-animation-overlay');
     const cutin = document.getElementById('gacha-cutin-text');
     const portal = document.getElementById('gacha-portal-core');
+    const is10x = results.length >= 10;
 
     if (overlay) {
       overlay.classList.remove('puchun-blackout');
@@ -253,6 +258,18 @@ export class GachaManager {
       try { sound.playGachaBuildup(); } catch(e) {}
     }, 200));
 
+    // For 10x: Show slot scroll teaser
+    if (is10x) {
+      this.cinematicTimeouts.push(setTimeout(() => {
+        if (cutin) {
+          cutin.textContent = '🎰 10連召喚スロット起動中...';
+          cutin.style.color = '#ffd700';
+        }
+        this.showSlotScrollPreview(overlay);
+        try { sound.playSlotSpin(); } catch(e) {}
+      }, 500));
+    }
+
     // Step 1: Step-Up Glow (Blue -> Yellow)
     this.cinematicTimeouts.push(setTimeout(() => {
       try { sound.playStepUp(2); } catch(e) {}
@@ -261,7 +278,7 @@ export class GachaManager {
         cutin.textContent = '⚡ 脳汁シナプス加速中: 65%... ⚡';
         cutin.style.color = '#ffd700';
       }
-    }, 800));
+    }, 900));
 
     // Step 2: Step-Up to Red / SSR if applicable
     this.cinematicTimeouts.push(setTimeout(() => {
@@ -274,18 +291,21 @@ export class GachaManager {
         }
         try { fx.screenShake(16, 600); } catch(e) {}
       }
-    }, 1400));
+    }, 1600));
 
     // Step 3: PUCHUN Freeze (0.7s Total Blackout) for SSR/UR!
     if (highestRarity === 'SSR' || highestRarity === 'UR') {
       this.cinematicTimeouts.push(setTimeout(() => {
         if (overlay) overlay.classList.add('puchun-blackout');
         try { sound.vibrateFreeze(); } catch(e) {}
-      }, 2000));
+      }, 2300));
 
-      // Awakening Blast + KYUIN-KYUIN Siren Sound!
+      // Awakening Blast + KYUIN-KYUIN Siren Sound + FULL-SCREEN CUTIN!
       this.cinematicTimeouts.push(setTimeout(() => {
         if (overlay) overlay.classList.remove('puchun-blackout');
+
+        // Full-screen rarity cutin burst!
+        this.showRarityCutin(highestRarity, overlay);
 
         // Pachinko Kyuin Jackpot Siren!
         try { sound.playKyuin(); } catch(e) {}
@@ -315,7 +335,7 @@ export class GachaManager {
           try { fx.flash('rgba(255, 0, 127, 0.8)', 500); } catch(e) {}
           try { fx.screenShake(25, 700); } catch(e) {}
         }
-      }, 2700));
+      }, 3000));
     } else {
       this.cinematicTimeouts.push(setTimeout(() => {
         if (highestRarity === 'SR') {
@@ -327,14 +347,82 @@ export class GachaManager {
           try { sound.playCritical(); } catch(e) {}
           try { fx.flash('rgba(255, 215, 0, 0.5)', 300); } catch(e) {}
         }
-      }, 2000));
+      }, 2300));
     }
 
     // Step 4: Show Card Flip Modal
-    const revealDelay = (highestRarity === 'SSR' || highestRarity === 'UR') ? 4200 : 2800;
+    const revealDelay = (highestRarity === 'SSR' || highestRarity === 'UR') ? 4500 : 3000;
     this.cinematicTimeouts.push(setTimeout(() => {
       this.skipCinematic();
     }, revealDelay));
+  }
+
+  // --- Slot Scroll Preview (10連時のスロット風演出) ---
+  showSlotScrollPreview(overlay) {
+    const slotEl = document.getElementById('gacha-slot-preview') || (() => {
+      const el = document.createElement('div');
+      el.id = 'gacha-slot-preview';
+      el.className = 'gacha-slot-preview';
+      if (overlay) overlay.appendChild(el);
+      return el;
+    })();
+
+    const icons = ['⚡','🗡️','💥','🌈','👑','☄️','🤖','⭐','🔥','💎'];
+    let frame = 0;
+    let speed = 50;
+    let running = true;
+
+    const tick = () => {
+      if (!running) return;
+      const shuffled = [...icons].sort(() => Math.random() - 0.5);
+      slotEl.innerHTML = shuffled.slice(0, 5).map(ic =>
+        `<span class="slot-icon">${ic}</span>`
+      ).join('');
+      frame++;
+      speed = Math.min(speed + 3, 200);
+      this.cinematicTimeouts.push(setTimeout(tick, speed));
+    };
+    tick();
+
+    // Stop slot after 800ms
+    this.cinematicTimeouts.push(setTimeout(() => {
+      running = false;
+      slotEl.remove();
+    }, 900));
+  }
+
+  // --- Full-Screen Rarity Cutin Blast (SSR/UR only) ---
+  showRarityCutin(rarity, overlay) {
+    // Remove any existing cutin
+    const old = document.getElementById('gacha-rarity-cutin');
+    if (old) old.remove();
+
+    const cutin = document.createElement('div');
+    cutin.id = 'gacha-rarity-cutin';
+    cutin.className = `gacha-rarity-cutin rarity-cutin-${rarity.toLowerCase()}`;
+
+    if (rarity === 'UR') {
+      cutin.innerHTML = `
+        <div class="rarity-cutin-bg"></div>
+        <div class="rarity-cutin-text">🌈 神域降臨 🌈</div>
+        <div class="rarity-cutin-sub">GOD RARE ✦ UR ✦ 確定演出</div>
+        <div class="rarity-cutin-sparks">✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦</div>
+      `;
+    } else {
+      cutin.innerHTML = `
+        <div class="rarity-cutin-bg"></div>
+        <div class="rarity-cutin-text">🔥 覚醒大当り 🔥</div>
+        <div class="rarity-cutin-sub">ULTRA RARE ✦ SSR ✦ 確定演出</div>
+        <div class="rarity-cutin-sparks">✦ ✦ ✦ ✦ ✦ ✦</div>
+      `;
+    }
+
+    document.body.appendChild(cutin);
+
+    // Remove after animation
+    this.cinematicTimeouts.push(setTimeout(() => {
+      if (cutin.parentNode) cutin.remove();
+    }, 1400));
   }
 
   // --- Interactive 3D Card Flip Modal (With Surprise Rank-Up) ---

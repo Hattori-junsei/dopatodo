@@ -225,6 +225,10 @@ export class TodoManager {
       difficulty: difficultyLevel,
       gems: diffObj.gems,
       coins: diffObj.coins,
+      gemsMin: diffObj.gemsMin || diffObj.gems,
+      gemsMax: diffObj.gemsMax || diffObj.gems,
+      coinsMin: diffObj.coinsMin || diffObj.coins,
+      coinsMax: diffObj.coinsMax || diffObj.coins,
       tag,
       routineId: routineId,
       dueTimestamp: dueTimestamp,
@@ -375,9 +379,11 @@ export class TodoManager {
         item.style.setProperty('--card-diff-color', diffObj.color);
         item.dataset.id = task.id;
 
-        const mult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
-        const displayGems = Math.round(task.gems * mult);
-        const displayCoins = Math.round(task.coins * mult);
+        const feverMult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
+        const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * feverMult);
+        const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * feverMult);
+        const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * feverMult);
+        const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * feverMult);
 
         // Routine Badge
         let routineBadgeText = '🔄 日課';
@@ -407,8 +413,8 @@ export class TodoManager {
             </div>
             <div class="todo-title">${task.text}</div>
             <div class="todo-reward-badge">
-              <span class="reward-gem">💎 +${displayGems}</span>
-              <span class="reward-coin">🪙 +${displayCoins}</span>
+              <span class="reward-gem">💎 <span class="reward-range">${gemsMin}〜</span>${gemsMax}</span>
+              <span class="reward-coin">🪙 <span class="reward-range">${coinsMin}〜</span>${coinsMax}</span>
             </div>
           </div>
           <div class="todo-actions-wrap">
@@ -461,6 +467,102 @@ export class TodoManager {
     }
   }
 
+  // --- Roulette Reward Roll (ルーレット報酷抽選) ---
+  rollRouletteReward(task, feverMult) {
+    const diffObj = DIFFICULTIES[task.difficulty || 2] || DIFFICULTIES[2];
+    const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * feverMult);
+    const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * feverMult);
+    const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * feverMult);
+    const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * feverMult);
+
+    const earnedGems = gemsMin + Math.floor(Math.random() * (gemsMax - gemsMin + 1));
+    const earnedCoins = coinsMin + Math.floor(Math.random() * (coinsMax - coinsMin + 1));
+
+    // Is jackpot? (top 15% of range)
+    const gemsRange = gemsMax - gemsMin;
+    const isJackpot = earnedGems >= gemsMin + Math.floor(gemsRange * 0.85);
+
+    return { earnedGems, earnedCoins, gemsMin, gemsMax, coinsMin, coinsMax, isJackpot };
+  }
+
+  // --- Animated Roulette Counter Popup ---
+  showRoulettePopup(element, earnedGems, earnedCoins, isJackpot, diffColor) {
+    const existing = document.getElementById('reward-roulette-popup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'reward-roulette-popup';
+    popup.className = `reward-roulette-popup ${isJackpot ? 'is-jackpot' : ''}`;
+    popup.style.setProperty('--diff-color', diffColor || '#00f3ff');
+
+    if (isJackpot) {
+      popup.innerHTML = `
+        <div class="roulette-jackpot-title">🎰 JACKPOT!!🎰</div>
+        <div class="roulette-gems-row"><span id="roulette-gems-val">0</span> <span class="roulette-unit">💎 GEMS</span></div>
+        <div class="roulette-coins-row"><span id="roulette-coins-val">0</span> <span class="roulette-unit">🪙 COINS</span></div>
+      `;
+    } else {
+      popup.innerHTML = `
+        <div class="roulette-label">🎲 報酷ルーレット！</div>
+        <div class="roulette-gems-row"><span id="roulette-gems-val">0</span> <span class="roulette-unit">💎 GEMS</span></div>
+        <div class="roulette-coins-row"><span id="roulette-coins-val">0</span> <span class="roulette-unit">🪙 COINS</span></div>
+      `;
+    }
+
+    document.body.appendChild(popup);
+
+    // Animate counting up (roulette-style)
+    const gemsEl = document.getElementById('roulette-gems-val');
+    const coinsEl = document.getElementById('roulette-coins-val');
+    const duration = isJackpot ? 700 : 500;
+    const fps = 30;
+    const steps = Math.round(duration / (1000 / fps));
+    let step = 0;
+
+    const tickFn = () => {
+      step++;
+      const progress = step / steps;
+      const easedProgress = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+
+      if (gemsEl) {
+        const displayGems = Math.round(easedProgress * earnedGems);
+        gemsEl.textContent = displayGems;
+      }
+      if (coinsEl) {
+        const displayCoins = Math.round(easedProgress * earnedCoins);
+        coinsEl.textContent = displayCoins;
+      }
+
+      try { sound.playRouletteTick(); } catch(e) {}
+
+      if (step < steps) {
+        requestAnimationFrame(tickFn);
+      } else {
+        // Final value settled!
+        if (gemsEl) gemsEl.textContent = earnedGems;
+        if (coinsEl) coinsEl.textContent = earnedCoins;
+
+        if (isJackpot) {
+          try { sound.playJackpotHit(); } catch(e) {}
+          try { fx.createRainbowConfetti(); } catch(e) {}
+          try { fx.flash('rgba(255, 215, 0, 0.7)', 400); } catch(e) {}
+          popup.classList.add('settled-jackpot');
+        } else {
+          try { sound.playCoin(); } catch(e) {}
+          popup.classList.add('settled');
+        }
+
+        // Auto remove after 2.5s
+        setTimeout(() => {
+          popup.classList.add('fading-out');
+          setTimeout(() => { if (popup.parentNode) popup.remove(); }, 500);
+        }, 2000);
+      }
+    };
+
+    requestAnimationFrame(tickFn);
+  }
+
   completeTask(task, element = null, event = null) {
     if (element && element.classList.contains('shattering')) return;
     if (element) element.classList.add('shattering');
@@ -476,13 +578,14 @@ export class TodoManager {
     sound.playShatter();
     fx.createShatterFX(x, y);
 
-    const mult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
-    const earnedGems = Math.round(task.gems * mult);
-    const earnedCoins = Math.round(task.coins * mult);
+    const feverMult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
+    const { earnedGems, earnedCoins, isJackpot } = this.rollRouletteReward(task, feverMult);
+    const diffObj = DIFFICULTIES[task.difficulty || 2] || DIFFICULTIES[2];
 
+    // Show roulette popup at element position
     setTimeout(() => {
-      sound.playCoin();
-    }, 120);
+      this.showRoulettePopup(element, earnedGems, earnedCoins, isJackpot, diffObj.color);
+    }, 80);
 
     this.app.state.gems += earnedGems;
     this.app.state.coins += earnedCoins;

@@ -1,5 +1,5 @@
-// sw.js - Service Worker for Offline & Fast Caching
-const CACHE_NAME = 'dopatodo-v2.0';
+// sw.js - Service Worker for Offline & Network-First Fresh Caching
+const CACHE_NAME = 'dopatodo-v2.2.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -43,26 +43,30 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-First strategy: Always fetch fresh code from server, fallback to cache if offline
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+        return networkResponse;
+      })
+      .catch(() => {
+        // Fallback to cache when offline
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+            return caches.match('./index.html');
+          }
         });
-        return response;
-      }).catch(() => {
-        // Fallback if network offline
-        return caches.match('./index.html');
-      });
-    })
+      })
   );
 });
 

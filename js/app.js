@@ -22,14 +22,20 @@ class DopaTodoApp {
       try {
         const parsed = JSON.parse(saved);
         // Deep merge with INITIAL_STATE for schema migrations
-        return {
+        const state = {
           ...INITIAL_STATE,
           ...parsed,
+          equipped: { ...INITIAL_STATE.equipped, ...(parsed.equipped || {}) },
           todayStats: { ...INITIAL_STATE.todayStats, ...(parsed.todayStats || {}) },
           weaponLevels: { ...INITIAL_STATE.weaponLevels, ...(parsed.weaponLevels || {}) },
           weaponDuplicates: { ...INITIAL_STATE.weaponDuplicates, ...(parsed.weaponDuplicates || {}) },
           achievementsClaimed: { ...INITIAL_STATE.achievementsClaimed, ...(parsed.achievementsClaimed || {}) }
         };
+        // Ensure default starter items exist in inventory
+        INITIAL_STATE.inventory.forEach(defaultId => {
+          if (!state.inventory.includes(defaultId)) state.inventory.push(defaultId);
+        });
+        return state;
       } catch (e) {
         console.error('Failed to parse save state, resetting to initial:', e);
       }
@@ -114,14 +120,8 @@ class DopaTodoApp {
           console.log('SW registration failed:', err);
         });
 
-        // Listen for controllerchange to reload page smoothly
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
-          }
-        });
+        // Safe update banner only, avoid auto-reload loop
+        console.log('DopaTodo Service Worker registered smoothly.');
       });
     }
 
@@ -361,6 +361,20 @@ class DopaTodoApp {
           }
         });
 
+        // Reset scroll to top on tab switch
+        const mainGrid = document.querySelector('.main-content-grid');
+        if (mainGrid) mainGrid.scrollTop = 0;
+
+        // Trigger section specific refreshes
+        if (targetTab === 'loadout' && this.gacha) {
+          this.gacha.renderInventory();
+          this.gacha.updateEquippedDisplay();
+        } else if (targetTab === 'todo' && this.todo) {
+          this.todo.renderTasks();
+        } else if (targetTab === 'battle' && this.battle) {
+          this.battle.updateStatsDisplay();
+        }
+
         // Instantly reset any residual screen shake transform
         const appEl = document.getElementById('app');
         if (appEl) appEl.style.transform = 'translate(0px, 0px)';
@@ -385,6 +399,8 @@ class DopaTodoApp {
       } else if (e.key === '2') {
         this.switchTab('battle');
       } else if (e.key === '3') {
+        this.switchTab('loadout');
+      } else if (e.key === '4') {
         this.switchTab('gacha');
       }
     });

@@ -470,17 +470,35 @@ export class TodoManager {
   // --- Roulette Reward Roll (ルーレット報酬抽選) ---
   rollRouletteReward(task, speedMult = 1.0) {
     const diffObj = DIFFICULTIES[task.difficulty || 2] || DIFFICULTIES[2];
-    const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * speedMult);
-    const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * speedMult);
-    const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * speedMult);
-    const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * speedMult);
+    
+    // Check Loadout Equipment Bonuses (Accessory & Set Bonuses)
+    let equipGemBonus = 0;
+    let equipCoinBonus = 0;
+    let jackpotRateMult = 1.0;
+
+    if (this.app && this.app.gacha && typeof this.app.gacha.getLoadoutStats === 'function') {
+      const loadout = this.app.gacha.getLoadoutStats();
+      equipGemBonus = loadout.gemBonus || 0;
+      equipCoinBonus = loadout.coinBonus || 0;
+      const dopaSet = loadout.activeSetBonuses.find(s => s.effect && s.effect.jackpotBoost);
+      if (dopaSet) jackpotRateMult = dopaSet.effect.jackpotBoost || 2.0;
+    }
+
+    const totalGemMult = speedMult * (1 + equipGemBonus);
+    const totalCoinMult = speedMult * (1 + equipCoinBonus);
+
+    const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * totalGemMult);
+    const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * totalGemMult);
+    const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * totalCoinMult);
+    const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * totalCoinMult);
 
     const earnedGems = gemsMin + Math.floor(Math.random() * (gemsMax - gemsMin + 1));
     const earnedCoins = coinsMin + Math.floor(Math.random() * (coinsMax - coinsMin + 1));
 
-    // Is jackpot? (top 15% of range)
+    // Is jackpot? (top 15% adjusted by jackpotBoost)
     const gemsRange = gemsMax - gemsMin;
-    const isJackpot = earnedGems >= gemsMin + Math.floor(gemsRange * 0.85);
+    const jackpotThreshold = Math.max(0.60, 0.85 / jackpotRateMult);
+    const isJackpot = earnedGems >= gemsMin + Math.floor(gemsRange * jackpotThreshold);
 
     return { earnedGems, earnedCoins, gemsMin, gemsMax, coinsMin, coinsMax, isJackpot };
   }

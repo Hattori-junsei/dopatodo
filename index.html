@@ -26,10 +26,10 @@
   <meta name="twitter:image" content="icons/icon-512.svg">
 
   <!-- CSS with Cache-Buster -->
-  <link rel="stylesheet" href="css/style.css?v=2.4.0">
-  <link rel="stylesheet" href="css/todo.css?v=2.4.0">
-  <link rel="stylesheet" href="css/battle.css?v=2.4.0">
-  <link rel="stylesheet" href="css/gacha.css?v=2.4.0">
+  <link rel="stylesheet" href="css/style.css?v=3.7.0">
+  <link rel="stylesheet" href="css/todo.css?v=3.7.0">
+  <link rel="stylesheet" href="css/battle.css?v=3.7.0">
+  <link rel="stylesheet" href="css/gacha.css?v=3.7.0">
 </head>
 <body>
 
@@ -563,7 +563,124 @@
       </section>
 
 
-      <!-- ================= 3. Gacha & Weapons Section ================= -->
+      <!-- ================= 3. Loadout & Equipment Section (新設: 装備・倉庫) ================= -->
+      <section id="section-loadout" class="app-section">
+        <div class="section-header">
+          <h2 class="section-title"><span>🛡️</span> EQUIPMENT & LOADOUT</h2>
+          <div id="loadout-total-bp" class="loadout-bp-badge">⚡ 総合戦闘力: 15</div>
+        </div>
+
+        <!-- 4-Slot Equipment Loadout Panel -->
+        <div class="loadout-panel glass-panel">
+          <div class="loadout-header">
+            <div class="loadout-title-row">
+              <span class="loadout-main-title">🛡️ 覚醒装備スロット（4部位ビルド）</span>
+            </div>
+            <div class="loadout-stats-summary-row">
+              <span id="loadout-total-atk" class="loadout-stat-pill">⚔️ ATK: +15</span>
+              <span id="loadout-total-crit" class="loadout-stat-pill">💥 会心率: 5% (x2.0)</span>
+              <span id="loadout-total-bonus" class="loadout-stat-pill">💎 報酬UP: +0%</span>
+            </div>
+            <div id="loadout-active-sets" class="loadout-sets-row">
+              <span class="set-none-text">発動中のセット効果: なし (同シリーズ装備で発動)</span>
+            </div>
+          </div>
+
+          <!-- 4 Equipment Slots Grid -->
+          <div class="loadout-slots-grid">
+            <!-- Slot 1: Main Weapon -->
+            <div class="loadout-slot-card slot-weapon" data-slot="weapon">
+              <div class="slot-type-header">
+                <span>🗡️ メイン武器</span>
+                <span id="loadout-rarity-weapon" class="rarity-tag rarity-n">N</span>
+              </div>
+              <div class="slot-card-body">
+                <div id="loadout-icon-weapon" class="loadout-item-icon">🎋</div>
+                <div class="slot-info">
+                  <div id="loadout-name-weapon" class="slot-name">折れた竹やり</div>
+                  <div class="slot-sub-row">
+                    <span id="loadout-stat-weapon" class="slot-stat">ATK +15</span>
+                    <span id="loadout-level-weapon" class="inv-level-tag">Lv.1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 2: Sub Armor / Shield -->
+            <div class="loadout-slot-card slot-armor" data-slot="armor">
+              <div class="slot-type-header">
+                <span>🛡️ サブ防具/鎧</span>
+                <span id="loadout-rarity-armor" class="rarity-tag rarity-n">N</span>
+              </div>
+              <div class="slot-card-body">
+                <div id="loadout-icon-armor" class="loadout-item-icon">📦</div>
+                <div class="slot-info">
+                  <div id="loadout-name-armor" class="slot-name">ダンボールの盾</div>
+                  <div class="slot-sub-row">
+                    <span id="loadout-stat-armor" class="slot-stat">会心倍率 +0.2x</span>
+                    <span id="loadout-level-armor" class="inv-level-tag">Lv.1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 3: Head / Helm -->
+            <div class="loadout-slot-card slot-head" data-slot="head">
+              <div class="slot-type-header">
+                <span>👑 頭部/ヘルム</span>
+                <span id="loadout-rarity-head" class="rarity-tag rarity-n">N</span>
+              </div>
+              <div class="slot-card-body">
+                <div id="loadout-icon-head" class="loadout-item-icon">👓</div>
+                <div class="slot-info">
+                  <div id="loadout-name-head" class="slot-name">ブルーライト眼鏡</div>
+                  <div class="slot-sub-row">
+                    <span id="loadout-stat-head" class="slot-stat">会心率 +5%</span>
+                    <span id="loadout-level-head" class="inv-level-tag">Lv.1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 4: Accessory / Ring -->
+            <div class="loadout-slot-card slot-accessory" data-slot="accessory">
+              <div class="slot-type-header">
+                <span>💍 装飾品/指輪</span>
+                <span id="loadout-rarity-accessory" class="rarity-tag rarity-n">N</span>
+              </div>
+              <div class="slot-card-body">
+                <div id="loadout-icon-accessory" class="loadout-item-icon">🧶</div>
+                <div class="slot-info">
+                  <div id="loadout-name-accessory" class="slot-name">輪ゴムリング</div>
+                  <div class="slot-sub-row">
+                    <span id="loadout-stat-accessory" class="slot-stat">報酬Gems +2%</span>
+                    <span id="loadout-level-accessory" class="inv-level-tag">Lv.1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory List Header & Slot Filters -->
+        <div class="inventory-section-header">
+          <div class="inventory-title-row">
+            <h3 class="section-title" style="font-size: 13px;"><span>🎒</span> 装備庫・インベントリ</h3>
+            <span style="font-size: 10px; color: var(--text-muted);">コインで各部位を強化！</span>
+          </div>
+          <div class="inventory-slot-filters">
+            <button class="inv-filter-btn active" data-slot-filter="all">⚡ 全て</button>
+            <button class="inv-filter-btn" data-slot-filter="weapon">🗡️ 武器</button>
+            <button class="inv-filter-btn" data-slot-filter="armor">🛡️ 防具</button>
+            <button class="inv-filter-btn" data-slot-filter="head">👑 頭部</button>
+            <button class="inv-filter-btn" data-slot-filter="accessory">💍 装飾品</button>
+          </div>
+        </div>
+        <div id="inventory-list" class="inventory-container" style="max-height: 480px;"></div>
+      </section>
+
+
+      <!-- ================= 4. Gacha Section (ガチャ召喚専用) ================= -->
       <section id="section-gacha" class="app-section">
         <div class="section-header">
           <h2 class="section-title"><span>🎰</span> DOPA GACHA</h2>
@@ -604,61 +721,33 @@
             <span>📺 応援してGET</span>
           </button>
         </div>
-
-        <!-- Current Equipped Weapon -->
-        <div class="equipped-weapon-card glass-panel">
-          <div class="equipped-header">
-            <span>⚡ 現在の装備武器</span>
-            <span id="equipped-rarity" class="rarity-tag rarity-n">N</span>
-          </div>
-          <div class="equipped-body">
-            <div id="equipped-icon" class="equipped-icon">🎋</div>
-            <div class="equipped-details">
-              <div class="equipped-name-row">
-                <span id="equipped-name" class="equipped-name">折れた竹やり</span>
-                <span id="equipped-level-badge" class="inv-level-tag">Lv.1</span>
-              </div>
-              <div id="equipped-atk" class="equipped-atk">ATK: +15</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Inventory List -->
-        <div class="section-header" style="margin-top: 8px;">
-          <h3 class="section-title" style="font-size: 13px;"><span>🎒</span> 武器庫（コインで強化＆装備）</h3>
-        </div>
-        <div id="inventory-list" class="inventory-container"></div>
       </section>
 
     </main>
 
-    <!-- Bottom Sticky Ad Banner -->
-    <div class="bottom-ad-banner" id="bottom-ad-banner">
-      <div class="ad-label-tag-mini">AD</div>
-      <div class="bottom-ad-content">
-        <span>⚡ 広告掲載枠 (Responsive Ad Banner Space) ⚡</span>
-      </div>
-    </div>
-
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="mobile-nav-bar">
+    <!-- Game Bottom Navigation Bar (Always Visible / Soshage Style) -->
+    <nav class="game-footer-nav mobile-nav-bar">
       <button class="nav-tab-btn active" data-tab="todo">
         <span class="tab-icon">📝</span>
-        <span>ToDo</span>
+        <span class="tab-label">ToDo</span>
       </button>
       <button class="nav-tab-btn" data-tab="battle">
         <span class="tab-icon">⚔️</span>
-        <span>バトル</span>
+        <span class="tab-label">バトル</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="loadout">
+        <span class="tab-icon">🛡️</span>
+        <span class="tab-label">装備</span>
       </button>
       <button class="nav-tab-btn" data-tab="gacha">
         <span class="tab-icon">🎰</span>
-        <span>ガチャ</span>
+        <span class="tab-label">ガチャ</span>
       </button>
     </nav>
 
   </div>
 
   <!-- JavaScript Modules with Cache-Buster -->
-  <script type="module" src="js/app.js?v=2.4.0"></script>
+  <script type="module" src="js/app.js?v=3.7.0"></script>
 </body>
 </html>

@@ -153,7 +153,7 @@ input:checked + .slider:before {
 
 .monster-hit {
   animation: monster-hurt 0.15s ease-out;
-  filter: drop-shadow(0 0 30px #ffffff) brightness(2) saturate(2);
+  filter: drop-shadow(0 0 15px rgba(255, 0, 127, 0.8));
 }
 
 @keyframes monster-hurt {

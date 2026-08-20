@@ -1,28 +1,33 @@
 // js/data.js - DopaTodo Master Data & State Schema
 // Supported Recurring Frequencies: daily, weekdays, weekends, weekly, monthly
 
-export const APP_VERSION = '2.3.0';
+export const APP_VERSION = '3.0.0';
 
 export const RELEASE_NOTES = {
-  version: '2.3.0',
-  title: '✨ DopaTodo v2.3 UIスリム化＆広告リワード解禁！',
+  version: '3.0.0',
+  title: '🛡️ 大型アップデート: 4部位マルチ装備＆セット効果システム解禁！',
   date: '2026-08-20',
-  giftGems: 300,
+  giftGems: 1000,
   features: [
     {
-      icon: '🧹',
-      title: 'UIスリム化（FEVER撤去）',
-      desc: 'FEVERゲージを整理し、ToDo画面がよりシンプルで集中しやすいレイアウトに生まれ変わりました。'
+      icon: '🛡️',
+      title: '4部位マルチ装備スロット（Loadout）',
+      desc: 'メイン武器・サブ防具・頭部ヘルム・装飾品の4箇所を自由に換装可能に！'
     },
     {
-      icon: '🎁',
-      title: '広告応援リワード（💎 無料ジェム獲得）',
-      desc: 'ガチャ画面に広告応援枠を新設！タップして応援するとガチャ石を無料で獲得できます。'
+      icon: '🌟',
+      title: 'シリーズセット効果（Set Bonus）',
+      desc: '神域・サイバー・ドパミンシリーズを2部位/4部位揃えると確定クリティカルや速度2倍が発動！'
     },
     {
-      icon: '⚔️',
-      title: '超ド迫力バトルダメージ表記',
-      desc: '3Dポップアップ、斬撃スラッシュ、火花パーティクル、コンボチェインバッジを完全搭載！'
+      icon: '⚡',
+      title: '総合戦闘力（Total Battle Power）',
+      desc: '装備の合計ATK・会心率・会心倍率・報酬倍率を統合した総合戦力値を算出・表示！'
+    },
+    {
+      icon: '💎',
+      title: '装飾品＆セットでToDo報酬大ブースト',
+      desc: '指輪やセット効果により、ToDo粉砕時の獲得Gems/Coinsが最大+100%以上に跳ね上がります！'
     }
   ]
 };
@@ -52,34 +57,92 @@ export const TASK_TAGS = [
   { id: 'easy', label: '10秒ドパ', icon: '🔥', color: '#a855f7' }
 ];
 
-export const WEAPONS = [
-  // Normal (N)
-  { id: 'w_n1', name: '折れた竹やり', rarity: 'N', baseAtk: 15, icon: '🎋', desc: '気休め程度の棒切れ。それでも殴れば痛い。' },
-  { id: 'w_n2', name: 'ブルーライトカット眼鏡', rarity: 'N', baseAtk: 25, icon: '👓', desc: '画面を見つめる目を守る。視界が黄ばむ。' },
-  { id: 'w_n3', name: '使い古した付箋紙', rarity: 'N', baseAtk: 35, icon: '📑', desc: 'タスクを書いて貼ったが3秒で忘れる。' },
-  { id: 'w_n4', name: '安物ボールペン', rarity: 'N', baseAtk: 50, icon: '🖊️', desc: 'インクの出が悪いが、先端で突くとそこそこ痛い。' },
+export const EQUIP_SLOTS = {
+  weapon: { id: 'weapon', label: 'メイン武器', icon: '🗡️', statLabel: 'ATK', color: '#ff007f' },
+  armor: { id: 'armor', label: 'サブ防具/鎧', icon: '🛡️', statLabel: 'CRIT DMG倍率', color: '#00f3ff' },
+  head: { id: 'head', label: '頭部/ヘルム', icon: '👑', statLabel: '会心率(CRIT RATE)', color: '#ffd700' },
+  accessory: { id: 'accessory', label: '装飾品/指輪', icon: '💍', statLabel: 'ToDo報酬ボーナス', color: '#00ff88' }
+};
 
-  // Rare (R)
-  { id: 'w_r1', name: '冷えたエナドリバズーカ', rarity: 'R', baseAtk: 220, icon: '🥫', desc: 'カフェインとタウリンを高圧噴射。脳がピリつく。' },
-  { id: 'w_r2', name: 'メカニカル青軸ナックル', rarity: 'R', baseAtk: 350, icon: '⌨️', desc: 'カチカチと爆音を鳴らして精神を研ぎ澄ます。' },
-  { id: 'w_r3', name: '100均タイマーボム', rarity: 'R', baseAtk: 500, icon: '⏱️', desc: 'ピピッ！と鳴るだけで心拍数が跳ね上がる。' },
-  { id: 'w_r4', name: '遮音ノイキャンヘッドホン', rarity: 'R', baseAtk: 750, icon: '🎧', desc: '周囲の雑音を完全遮断。自分の鼓動だけが響く。' },
+export const SET_BONUSES = {
+  god: {
+    id: 'god',
+    name: '神域（ゴッド）シリーズ',
+    color: '#00ff88',
+    twoPiece: { label: '全攻撃ダメージ +50%', dmgBoost: 1.5 },
+    fourPiece: { label: '全攻撃 確定クリティカル ＆ タスク報酬Gems +30%', forceCrit: true, gemBonus: 0.30 }
+  },
+  cyber: {
+    id: 'cyber',
+    name: 'サイバーネオンシリーズ',
+    color: '#00f3ff',
+    twoPiece: { label: 'クリティカル倍率 +1.5倍', critDmgBoost: 1.5 },
+    fourPiece: { label: 'オート攻撃間隔 2倍速(0.5s) ＆ 会心率+40%', autoSpeedBoost: 0.5, critRateBoost: 0.40 }
+  },
+  dopa: {
+    id: 'dopa',
+    name: '脳汁ドパシリーズ',
+    color: '#ff007f',
+    twoPiece: { label: 'タスク粉砕時 コイン獲得量 +50%', coinBonus: 0.50 },
+    fourPiece: { label: '報酬ルーレット JACKPOT確率2倍 ＆ Gems+20%', jackpotBoost: 2.0, gemBonus: 0.20 }
+  }
+};
 
-  // Super Rare (SR)
-  { id: 'w_sr1', name: '覚醒の電磁レールガン', rarity: 'SR', baseAtk: 3800, icon: '⚡', desc: '電流でシナプスを直撃。思考速度が光速に達する。' },
-  { id: 'w_sr2', name: '締切3分前のアドレナリン刀', rarity: 'SR', baseAtk: 6500, icon: '🗡️', desc: '死線に追い詰められた時のみ真の切れ味を発揮。' },
-  { id: 'w_sr3', name: 'ゾーン突入ゲーミングチェア', rarity: 'SR', baseAtk: 9800, icon: '💺', desc: '座った瞬間にあらゆる雑念が吹き飛ぶ王座。' },
-  { id: 'w_sr4', name: '超光速デュアルモニター', rarity: 'SR', baseAtk: 15000, icon: '🖥️', desc: '視界全体が情報空間に。マルチタスク粉砕。' },
-
+export const EQUIPMENT_ITEMS = [
+  // ================= 1. MAIN WEAPONS (🗡️ ATK) =================
+  // Normal
+  { id: 'w_n1', slot: 'weapon', series: 'basic', name: '折れた竹やり', rarity: 'N', baseAtk: 15, critRate: 0.05, critMult: 1.5, gemBonus: 0, icon: '🎋', desc: '気休め程度の棒切れ。それでも殴れば痛い。' },
+  { id: 'w_n2', slot: 'weapon', series: 'basic', name: '安物ボールペン', rarity: 'N', baseAtk: 35, critRate: 0.05, critMult: 1.5, gemBonus: 0, icon: '🖊️', desc: 'インクの出が悪いが、先端で突くとそこそこ痛い。' },
+  // Rare
+  { id: 'w_r1', slot: 'weapon', series: 'cyber', name: 'エナドリバズーカ', rarity: 'R', baseAtk: 220, critRate: 0.08, critMult: 1.8, gemBonus: 0.05, icon: '🥫', desc: 'カフェインとタウリンを高圧噴射。脳がピリつく。' },
+  { id: 'w_r2', slot: 'weapon', series: 'dopa', name: '青軸ナックル', rarity: 'R', baseAtk: 450, critRate: 0.10, critMult: 2.0, gemBonus: 0.05, icon: '⌨️', desc: 'カチカチと爆音を鳴らして精神を研ぎ澄ます。' },
+  // Super Rare
+  { id: 'w_sr1', slot: 'weapon', series: 'cyber', name: '電磁レールガン', rarity: 'SR', baseAtk: 3800, critRate: 0.15, critMult: 2.5, gemBonus: 0.10, icon: '⚡', desc: '電流でシナプスを直撃。思考速度が光速に達する。' },
+  { id: 'w_sr2', slot: 'weapon', series: 'dopa', name: 'アドレナリン刀', rarity: 'SR', baseAtk: 7500, critRate: 0.20, critMult: 2.8, gemBonus: 0.10, icon: '🗡️', desc: '死線に追い詰められた時のみ真の切れ味を発揮。' },
   // SSR
-  { id: 'w_ssr1', name: '🔥 量子ドパミン・バースト砲', rarity: 'SSR', baseAtk: 95000, icon: '💥', desc: '脳内受容体を過負荷させ、集中力を神の領域へと引き上げる。' },
-  { id: 'w_ssr2', name: '🔥 禁断のタスク消滅ディスインテグレーター', rarity: 'SSR', baseAtk: 250000, icon: '☄️', desc: '分子レベルで先延ばしを分解・消滅させる禁忌の兵器。' },
-  { id: 'w_ssr3', name: '🔥 全自動AIプロンプト巨神兵', rarity: 'SSR', baseAtk: 600000, icon: '🤖', desc: '思考する前に全てを終わらせるAI知能の化身。' },
-
+  { id: 'w_ssr1', slot: 'weapon', series: 'cyber', name: '量子ドパミン砲', rarity: 'SSR', baseAtk: 95000, critRate: 0.25, critMult: 3.5, gemBonus: 0.20, icon: '💥', desc: '脳内受容体を過負荷させ、集中力を神の領域へと引き上げる。' },
+  { id: 'w_ssr2', slot: 'weapon', series: 'dopa', name: 'タスク消滅砲', rarity: 'SSR', baseAtk: 350000, critRate: 0.30, critMult: 4.0, gemBonus: 0.25, icon: '☄️', desc: '分子レベルで先延ばしを分解・消滅させる禁忌の兵器。' },
   // UR
-  { id: 'w_ur1', name: '🌈 時空崩壊インフィニティ・ビッグバン', rarity: 'UR', baseAtk: 77777777, icon: '🌌', desc: '宇宙開闢のエネルギーでタスクもボスも瞬時に無へと帰す。' },
-  { id: 'w_ur2', name: '🌈 覚醒ドパ神の超光子オーラ', rarity: 'UR', baseAtk: 999999999, icon: '👑', desc: 'もはや作業すら不要。存在するだけで全てが達成される。' }
+  { id: 'w_ur1', slot: 'weapon', series: 'god', name: '時空崩壊ビッグバン', rarity: 'UR', baseAtk: 77777777, critRate: 0.40, critMult: 5.0, gemBonus: 0.50, icon: '🌌', desc: '宇宙開闢のエネルギーでタスクもボスも瞬時に無へと帰す。' },
+
+  // ================= 2. SUB ARMOR / SHIELDS (🛡️ CRIT DMG & DEF) =================
+  // Normal
+  { id: 'a_n1', slot: 'armor', series: 'basic', name: 'ダンボールの盾', rarity: 'N', baseAtk: 5, critRate: 0.02, critMult: 0.2, gemBonus: 0, icon: '📦', desc: '通販の空き箱。水に濡れると即座にふやける。' },
+  // Rare
+  { id: 'a_r1', slot: 'armor', series: 'cyber', name: 'カーボン防弾ジャケット', rarity: 'R', baseAtk: 80, critRate: 0.05, critMult: 0.5, gemBonus: 0.03, icon: '🦺', desc: '軽量かつ強固。無駄な誘惑通知を弾き返す。' },
+  // Super Rare
+  { id: 'a_sr1', slot: 'armor', series: 'dopa', name: 'ゲーミング防護アーマー', rarity: 'SR', baseAtk: 1200, critRate: 0.10, critMult: 1.0, gemBonus: 0.08, icon: '🛡️', desc: 'フルRGBライティングで精神を常にハイテンションに維持。' },
+  // SSR
+  { id: 'a_ssr1', slot: 'armor', series: 'cyber', name: 'ナノマシン電磁シールド', rarity: 'SSR', baseAtk: 45000, critRate: 0.15, critMult: 2.0, gemBonus: 0.15, icon: '🔮', desc: '先延ばしの魔力をエネルギーに変換して反射する。' },
+  // UR
+  { id: 'a_ur1', slot: 'armor', series: 'god', name: '神聖アークエンジェル・ローブ', rarity: 'UR', baseAtk: 33333333, critRate: 0.25, critMult: 3.5, gemBonus: 0.30, icon: '✨', desc: '神の加護を受けた聖なる鎧。あらゆる雑念を完全無効化。' },
+
+  // ================= 3. HEAD / HELMS (👑 CRIT RATE & FOCUS) =================
+  // Normal
+  { id: 'h_n1', slot: 'head', series: 'basic', name: 'ブルーライト眼鏡', rarity: 'N', baseAtk: 5, critRate: 0.05, critMult: 0.1, gemBonus: 0, icon: '👓', desc: '画面を見つめる目を守る。視界が黄ばむ。' },
+  // Rare
+  { id: 'h_r1', slot: 'head', series: 'cyber', name: 'ノイキャンヘッドホン', rarity: 'R', baseAtk: 90, critRate: 0.10, critMult: 0.3, gemBonus: 0.03, icon: '🎧', desc: '周囲の雑音を完全遮断。自分の鼓動だけが響く。' },
+  // Super Rare
+  { id: 'h_sr1', slot: 'head', series: 'dopa', name: 'ゾーン覚醒バイザー', rarity: 'SR', baseAtk: 1500, critRate: 0.20, critMult: 0.6, gemBonus: 0.08, icon: '🥽', desc: '装着した瞬間に視界が超集中モードへと固定される。' },
+  // SSR
+  { id: 'h_ssr1', slot: 'head', series: 'cyber', name: 'サイバー・ニューロクラウン', rarity: 'SSR', baseAtk: 55000, critRate: 0.30, critMult: 1.2, gemBonus: 0.15, icon: '👑', desc: '脳波を直接同調させ、思考速度を10倍に加速させる王冠。' },
+  // UR
+  { id: 'h_ur1', slot: 'head', series: 'god', name: '至高神ドパの神光ティアラ', rarity: 'UR', baseAtk: 44444444, critRate: 0.45, critMult: 2.5, gemBonus: 0.35, icon: '🌟', desc: '全知全能の光を放ち、ひらめきと会心を極限まで引き上げる。' },
+
+  // ================= 4. ACCESSORIES / RINGS (💍 REWARD BOOST) =================
+  // Normal
+  { id: 'acc_n1', slot: 'accessory', series: 'basic', name: '100均の輪ゴムリング', rarity: 'N', baseAtk: 5, critRate: 0.02, critMult: 0.1, gemBonus: 0.02, icon: '🧶', desc: '指にはめると少しだけやる気が出る気がする。' },
+  // Rare
+  { id: 'acc_r1', slot: 'accessory', series: 'dopa', name: 'カフェイン濃縮アミュレット', rarity: 'R', baseAtk: 110, critRate: 0.05, critMult: 0.2, gemBonus: 0.10, icon: '💊', desc: 'タスク完了時の報酬ジェムが +10% 増加する。' },
+  // Super Rare
+  { id: 'acc_sr1', slot: 'accessory', series: 'cyber', name: '暗号資産ゴールドリング', rarity: 'SR', baseAtk: 1800, critRate: 0.10, critMult: 0.5, gemBonus: 0.20, icon: '💍', desc: '富を引き寄せる指輪。ToDo報酬ジェム+20%、コイン+30%。' },
+  // SSR
+  { id: 'acc_ssr1', slot: 'accessory', series: 'dopa', name: '無限ドパミン生成コア', rarity: 'SSR', baseAtk: 65000, critRate: 0.20, critMult: 1.0, gemBonus: 0.35, icon: '💎', desc: '報酬ジェム+35%、コイン+50%。脳汁が止まらなくなる。' },
+  // UR
+  { id: 'acc_ur1', slot: 'accessory', series: 'god', name: '万物掌握インフィニティ・リング', rarity: 'UR', baseAtk: 55555555, critRate: 0.35, critMult: 2.0, gemBonus: 0.60, icon: '💠', desc: 'ToDo報酬ジェム+60%、コイン+100%。世界の富を独占する。' }
 ];
+
+export const WEAPONS = EQUIPMENT_ITEMS; // Backward compatibility alias
 
 export const MONSTERS = [
   {
@@ -177,10 +240,16 @@ export const INITIAL_STATE = {
   coins: 500,
   comboCount: 0,
   dailyAdWatches: 0,
-  equippedWeaponId: 'w_n1',
-  inventory: ['w_n1'],
-  weaponLevels: { 'w_n1': 1 },
-  weaponDuplicates: { 'w_n1': 0 },
+  equipped: {
+    weapon: 'w_n1',
+    armor: 'a_n1',
+    head: 'h_n1',
+    accessory: 'acc_n1'
+  },
+  equippedWeaponId: 'w_n1', // backward compatibility
+  inventory: ['w_n1', 'a_n1', 'h_n1', 'acc_n1'],
+  weaponLevels: { 'w_n1': 1, 'a_n1': 1, 'h_n1': 1, 'acc_n1': 1 },
+  weaponDuplicates: { 'w_n1': 0, 'a_n1': 0, 'h_n1': 0, 'acc_n1': 0 },
   stage: 1,
   bossCurrentHp: 150,
   bossMaxHp: 150,

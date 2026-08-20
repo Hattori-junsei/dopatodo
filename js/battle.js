@@ -92,9 +92,16 @@ export class BattleManager {
     this.stopAutoAttack();
     if (this.app.state && !this.app.state.autoAttackEnabled) return;
 
+    let interval = 1000;
+    if (this.app && this.app.gacha && typeof this.app.gacha.getLoadoutStats === 'function') {
+      const stats = this.app.gacha.getLoadoutStats();
+      const cyberSet = stats.activeSetBonuses.find(s => s.effect && s.effect.autoSpeedBoost);
+      if (cyberSet) interval = 500; // 2x speed for 4-piece Cyber set
+    }
+
     this.autoAttackTimer = setInterval(() => {
       this.attack(1.0, null, false);
-    }, 1000);
+    }, interval);
   }
 
   stopAutoAttack() {
@@ -120,61 +127,81 @@ export class BattleManager {
     this.lastHitTime = now;
 
     let atkPower = 15;
-    if (this.app && this.app.gacha && typeof this.app.gacha.getWeaponAtk === 'function') {
-      const equippedId = (this.app.state && this.app.state.equippedWeaponId) || 'w_n1';
-      atkPower = this.app.gacha.getWeaponAtk(equippedId);
+    let critChance = 0.15;
+    let critMult = 2.0;
+    let forceCrit = false;
+
+    if (this.app && this.app.gacha && typeof this.app.gacha.getLoadoutStats === 'function') {
+      const loadout = this.app.gacha.getLoadoutStats();
+      atkPower = loadout.totalAtk || 15;
+      critChance = loadout.critRate || 0.15;
+      critMult = loadout.critMult || 2.0;
+      forceCrit = !!loadout.activeSetBonuses.find(s => s.effect && s.effect.forceCrit);
     }
 
     let baseAtk = atkPower * multiplier;
 
-    const isCrit = Math.random() < 0.25 || isManual;
-    const finalDamage = Math.max(1, Math.round(baseAtk * (isCrit ? (2.5 + Math.random()) : (0.9 + Math.random() * 0.2))));
+    const isCrit = forceCrit || isManual || Math.random() < critChance;
+    const finalDamage = Math.max(1, Math.round(baseAtk * (isCrit ? (critMult + Math.random() * 0.5) : (0.9 + Math.random() * 0.2))));
 
     this.currentMonster.currentHp = Math.max(0, this.currentMonster.currentHp - finalDamage);
     if (this.app.state) this.app.state.bossCurrentHp = this.currentMonster.currentHp;
+
+    const battleSection = document.getElementById('section-battle');
+    const isBattleVisible = battleSection && battleSection.classList.contains('active');
 
     const targetEl = document.getElementById('monster-avatar');
     let hitX = window.innerWidth / 2;
     let hitY = window.innerHeight * 0.35;
 
-    if (targetEl) {
+    if (isBattleVisible && targetEl) {
       const rect = targetEl.getBoundingClientRect();
-      hitX = (event && event.clientX ? event.clientX : rect.left + rect.width / 2) + (Math.random() - 0.5) * 50;
-      hitY = (event && event.clientY ? event.clientY : rect.top + rect.height / 3) + (Math.random() - 0.5) * 30;
+      if (rect.width > 0 && rect.height > 0) {
+        hitX = (event && event.clientX ? event.clientX : rect.left + rect.width / 2) + (Math.random() - 0.5) * 50;
+        hitY = (event && event.clientY ? event.clientY : rect.top + rect.height / 3) + (Math.random() - 0.5) * 30;
+      }
 
-      targetEl.classList.add('monster-hit');
-      setTimeout(() => targetEl.classList.remove('monster-hit'), 150);
+      if (isManual) {
+        targetEl.classList.add('monster-hit');
+        setTimeout(() => targetEl.classList.remove('monster-hit'), 150);
+      }
     }
 
-    try {
-      if (isCrit) {
-        sound.playCritical();
-        fx.screenShake(12, 220);
-        fx.flash('rgba(255, 0, 127, 0.25)', 150);
-      } else {
-        sound.playAttack();
-      }
+    if (isBattleVisible) {
+      try {
+        if (isCrit) {
+          sound.playCritical();
+          if (isManual) {
+            fx.screenShake(12, 220);
+            fx.flash('rgba(255, 0, 127, 0.25)', 150);
+          }
+        } else {
+          sound.playAttack();
+        }
 
-      // Visual Slash & Sparks Particle FX
-      if (typeof fx.createHitFX === 'function') {
-        fx.createHitFX(hitX, hitY, isCrit);
-      }
+        // Visual Slash & Sparks Particle FX
+        if (typeof fx.createHitFX === 'function') {
+          fx.createHitFX(hitX, hitY, isCrit);
+        }
 
-      // Ultra-Rich Damage Floating Text
-      const dmgFormatted = `-${this.app.formatNumber(finalDamage)}`;
-      if (typeof fx.createDamagePopup === 'function') {
-        fx.createDamagePopup(hitX, hitY, dmgFormatted, isCrit, isCrit ? '#ff007f' : '#ffd700', this.comboHits);
-      } else if (typeof fx.createFloatingText === 'function') {
-        fx.createFloatingText(hitX, hitY, dmgFormatted, isCrit ? '#ff007f' : '#ffd700', isCrit ? 42 : 26, isCrit, this.comboHits);
-      }
-    } catch (e) {}
+        // Ultra-Rich Damage Floating Text
+        const dmgFormatted = `-${this.app.formatNumber(finalDamage)}`;
+        if (typeof fx.createDamagePopup === 'function') {
+          fx.createDamagePopup(hitX, hitY, dmgFormatted, isCrit, isCrit ? '#ff007f' : '#ffd700', this.comboHits);
+        } else if (typeof fx.createFloatingText === 'function') {
+          fx.createFloatingText(hitX, hitY, dmgFormatted, isCrit ? '#ff007f' : '#ffd700', isCrit ? 42 : 26, isCrit, this.comboHits);
+        }
+      } catch (e) {}
+    }
 
     // Check Boss Enrage Mode (HP < 30%)
     if (!this.isEnraged && this.currentMonster.currentHp > 0 && (this.currentMonster.currentHp / this.currentMonster.maxHp) <= 0.3) {
       this.triggerEnrage();
     }
 
-    this.updateHpBar();
+    if (isBattleVisible) {
+      this.updateHpBar();
+    }
 
     if (this.currentMonster.currentHp <= 0) {
       this.handleDefeat();
@@ -183,10 +210,15 @@ export class BattleManager {
 
   triggerEnrage() {
     this.isEnraged = true;
-    try {
-      sound.playCritical();
-      fx.flash('rgba(255, 0, 85, 0.5)', 300);
-    } catch (e) {}
+    const battleSection = document.getElementById('section-battle');
+    const isBattleVisible = battleSection && battleSection.classList.contains('active');
+
+    if (isBattleVisible) {
+      try {
+        sound.playCritical();
+        fx.flash('rgba(255, 0, 85, 0.5)', 300);
+      } catch (e) {}
+    }
 
     const quoteEl = document.getElementById('monster-quote');
     const avatarEl = document.getElementById('monster-avatar');
@@ -196,15 +228,20 @@ export class BattleManager {
 
   handleDefeat() {
     this.stopAutoAttack();
-    try { sound.playExplosion(); } catch (e) {}
+    const battleSection = document.getElementById('section-battle');
+    const isBattleVisible = battleSection && battleSection.classList.contains('active');
 
-    const targetEl = document.getElementById('monster-avatar');
-    if (targetEl) {
-      const rect = targetEl.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      try { fx.createExplosionFX(x, y); } catch (e) {}
-      targetEl.classList.add('monster-defeated');
+    if (isBattleVisible) {
+      try { sound.playExplosion(); } catch (e) {}
+
+      const targetEl = document.getElementById('monster-avatar');
+      if (targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        const x = rect.width > 0 ? rect.left + rect.width / 2 : window.innerWidth / 2;
+        const y = rect.height > 0 ? rect.top + rect.height / 2 : window.innerHeight * 0.35;
+        try { fx.createExplosionFX(x, y); } catch (e) {}
+        targetEl.classList.add('monster-defeated');
+      }
     }
 
     const earnedGems = this.currentMonster.rewardGems;

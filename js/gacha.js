@@ -1,7 +1,7 @@
 // js/gacha.js - Extreme Dopamine Gacha System (Kyuin Sound, Puchun Blackout & Surprise Rank-Up)
 import { sound } from './sound.js';
 import { fx } from './fx.js';
-import { RARITIES, WEAPONS } from './data.js';
+import { RARITIES, WEAPONS, EQUIPMENT_ITEMS, EQUIP_SLOTS, SET_BONUSES } from './data.js';
 
 export class GachaManager {
   constructor(app) {
@@ -129,37 +129,131 @@ export class GachaManager {
         }
       });
     }
+
+    // Inventory Slot Filter Buttons
+    const filterBtns = document.querySelectorAll('.inv-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.slotFilter || 'all';
+        this.renderInventory(filter);
+        sound.playTap();
+      });
+    });
+  }
+
+  getLoadoutStats() {
+    const equipped = this.app.state.equipped || {
+      weapon: 'w_n1',
+      armor: 'a_n1',
+      head: 'h_n1',
+      accessory: 'acc_n1'
+    };
+
+    let totalAtk = 0;
+    let totalCritRate = 0.05; // Base 5%
+    let totalCritMult = 2.0;  // Base 2.0x
+    let totalGemBonus = 0;
+    let totalCoinBonus = 0;
+    const seriesCounts = {};
+
+    Object.entries(equipped).forEach(([slot, itemId]) => {
+      const item = EQUIPMENT_ITEMS.find(eq => eq.id === itemId);
+      if (!item) return;
+
+      const itemAtk = this.getItemAtk(itemId);
+      totalAtk += itemAtk;
+      totalCritRate += (item.critRate || 0);
+      totalCritMult += (item.critMult || 0);
+      totalGemBonus += (item.gemBonus || 0);
+
+      // Count series for set bonuses
+      if (item.series && item.series !== 'basic') {
+        seriesCounts[item.series] = (seriesCounts[item.series] || 0) + 1;
+      }
+    });
+
+    // Check Set Bonuses
+    const activeSetBonuses = [];
+    Object.entries(seriesCounts).forEach(([seriesKey, count]) => {
+      const setDef = SET_BONUSES[seriesKey];
+      if (!setDef) return;
+
+      if (count >= 2) {
+        activeSetBonuses.push({
+          name: `${setDef.name} (2部位)`,
+          color: setDef.color,
+          label: setDef.twoPiece.label,
+          effect: setDef.twoPiece
+        });
+        if (setDef.twoPiece.dmgBoost) totalAtk *= setDef.twoPiece.dmgBoost;
+        if (setDef.twoPiece.critDmgBoost) totalCritMult += setDef.twoPiece.critDmgBoost;
+        if (setDef.twoPiece.coinBonus) totalCoinBonus += setDef.twoPiece.coinBonus;
+      }
+
+      if (count >= 4) {
+        activeSetBonuses.push({
+          name: `${setDef.name} (4部位コンプ)`,
+          color: setDef.color,
+          label: setDef.fourPiece.label,
+          effect: setDef.fourPiece
+        });
+        if (setDef.fourPiece.gemBonus) totalGemBonus += setDef.fourPiece.gemBonus;
+        if (setDef.fourPiece.critRateBoost) totalCritRate += setDef.fourPiece.critRateBoost;
+      }
+    });
+
+    // Calculate Total Battle Power (総合戦闘力)
+    const battlePower = Math.round(totalAtk * (1 + totalCritRate * (totalCritMult - 1)) * (1 + totalGemBonus + totalCoinBonus));
+
+    return {
+      totalAtk: Math.round(totalAtk),
+      critRate: Math.min(1.0, totalCritRate),
+      critMult: totalCritMult,
+      gemBonus: totalGemBonus,
+      coinBonus: totalCoinBonus,
+      battlePower: Math.max(10, battlePower),
+      seriesCounts,
+      activeSetBonuses,
+      equipped
+    };
+  }
+
+  getItemAtk(itemId) {
+    const item = EQUIPMENT_ITEMS.find(eq => eq.id === itemId);
+    if (!item) return 15;
+
+    const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[itemId]) || 1;
+    const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[itemId]) || 0;
+
+    const limitBreakMult = 1 + (dupes * 0.2);
+    const levelBonus = (level - 1) * (item.baseAtk * 0.15);
+
+    return Math.round(item.baseAtk * limitBreakMult + levelBonus);
   }
 
   getWeaponAtk(weaponId) {
-    const weapon = WEAPONS.find(w => w.id === weaponId);
-    if (!weapon) return 15;
-
-    const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[weaponId]) || 1;
-    const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[weaponId]) || 0;
-
-    const limitBreakMult = 1 + (dupes * 0.2);
-    const levelBonus = (level - 1) * (weapon.baseAtk * 0.15);
-
-    return Math.round(weapon.baseAtk * limitBreakMult + levelBonus);
+    // Backward compatibility wrapper
+    return this.getItemAtk(weaponId);
   }
 
-  getUpgradeCost(weaponId) {
-    const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[weaponId]) || 1;
-    const weapon = WEAPONS.find(w => w.id === weaponId) || WEAPONS[0];
+  getUpgradeCost(itemId) {
+    const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[itemId]) || 1;
+    const item = EQUIPMENT_ITEMS.find(eq => eq.id === itemId) || EQUIPMENT_ITEMS[0];
     const rarityMult = { N: 1, R: 2, SR: 5, SSR: 15, UR: 50 };
-    return Math.round(level * 80 * (rarityMult[weapon.rarity] || 1));
+    return Math.round(level * 80 * (rarityMult[item.rarity] || 1));
   }
 
-  upgradeWeapon(weaponId) {
+  upgradeItem(itemId) {
     if (!this.app.state.weaponLevels) this.app.state.weaponLevels = {};
-    const level = this.app.state.weaponLevels[weaponId] || 1;
+    const level = this.app.state.weaponLevels[itemId] || 1;
     if (level >= 50) {
       alert('これ以上強化できません（最大レベル: 50）');
       return;
     }
 
-    const cost = this.getUpgradeCost(weaponId);
+    const cost = this.getUpgradeCost(itemId);
     if (this.app.state.coins < cost) {
       sound.playTap();
       alert(`🪙 コインが足りません！（必要: ${cost} コイン / 所持: ${this.app.state.coins} コイン）\nタスクを粉砕するかボスを倒してコインを稼ごう！`);
@@ -167,7 +261,7 @@ export class GachaManager {
     }
 
     this.app.state.coins -= cost;
-    this.app.state.weaponLevels[weaponId] = level + 1;
+    this.app.state.weaponLevels[itemId] = level + 1;
     this.app.state.totalUpgrades = (this.app.state.totalUpgrades || 0) + 1;
 
     sound.playUpgrade();
@@ -179,6 +273,24 @@ export class GachaManager {
     this.updateEquippedDisplay();
     if (this.app.battle) this.app.battle.updateStatsDisplay();
     this.app.saveState();
+  }
+
+  upgradeWeapon(weaponId) {
+    this.upgradeItem(weaponId);
+  }
+
+  equipItem(slot, itemId) {
+    if (!this.app.state.equipped) {
+      this.app.state.equipped = { weapon: 'w_n1', armor: 'a_n1', head: 'h_n1', accessory: 'acc_n1' };
+    }
+    this.app.state.equipped[slot] = itemId;
+    if (slot === 'weapon') this.app.state.equippedWeaponId = itemId;
+
+    sound.playTap();
+    this.app.saveState();
+    this.renderInventory();
+    this.updateEquippedDisplay();
+    if (this.app.battle) this.app.battle.updateStatsDisplay();
   }
 
   roll(count) {
@@ -203,37 +315,36 @@ export class GachaManager {
     let highestRarity = 'N';
     const rarityRank = { N: 1, R: 2, SR: 3, SSR: 4, UR: 5 };
 
-    if (!this.app.state.inventory) this.app.state.inventory = ['w_n1'];
-    if (!this.app.state.weaponLevels) this.app.state.weaponLevels = { 'w_n1': 1 };
-    if (!this.app.state.weaponDuplicates) this.app.state.weaponDuplicates = { 'w_n1': 0 };
+    if (!this.app.state.inventory) this.app.state.inventory = ['w_n1', 'a_n1', 'h_n1', 'acc_n1'];
+    if (!this.app.state.weaponLevels) this.app.state.weaponLevels = {};
+    if (!this.app.state.weaponDuplicates) this.app.state.weaponDuplicates = {};
 
     for (let i = 0; i < count; i++) {
       const isGuaranteed = (count === 10 && i === 9);
-      const weapon = this.drawRandomWeapon(isGuaranteed);
+      const item = this.drawRandomEquipment(isGuaranteed);
 
-      const isDupe = this.app.state.inventory.includes(weapon.id);
+      const isDupe = this.app.state.inventory.includes(item.id);
       if (!isDupe) {
-        this.app.state.inventory.push(weapon.id);
-        this.app.state.weaponLevels[weapon.id] = 1;
-        this.app.state.weaponDuplicates[weapon.id] = 0;
+        this.app.state.inventory.push(item.id);
+        this.app.state.weaponLevels[item.id] = 1;
+        this.app.state.weaponDuplicates[item.id] = 0;
       } else {
-        const currentDupes = this.app.state.weaponDuplicates[weapon.id] || 0;
-        this.app.state.weaponDuplicates[weapon.id] = Math.min(5, currentDupes + 1);
+        const currentDupes = this.app.state.weaponDuplicates[item.id] || 0;
+        this.app.state.weaponDuplicates[item.id] = Math.min(5, currentDupes + 1);
       }
 
-      // Surprise rank-up chance (15% chance for SSR/UR to disguise as SR on card back!)
-      const isSurprise = (weapon.rarity === 'SSR' || weapon.rarity === 'UR') && Math.random() < 0.4;
+      const isSurprise = (item.rarity === 'SSR' || item.rarity === 'UR') && Math.random() < 0.4;
 
       results.push({
-        ...weapon,
+        ...item,
         isDupe: isDupe,
-        dupeCount: this.app.state.weaponDuplicates[weapon.id] || 0,
+        dupeCount: this.app.state.weaponDuplicates[item.id] || 0,
         isSurprise: isSurprise,
         isOpen: false
       });
 
-      if (rarityRank[weapon.rarity] > rarityRank[highestRarity]) {
-        highestRarity = weapon.rarity;
+      if (rarityRank[item.rarity] > rarityRank[highestRarity]) {
+        highestRarity = item.rarity;
       }
     }
 
@@ -247,7 +358,7 @@ export class GachaManager {
     this.playCinematicSequence(results, highestRarity);
   }
 
-  drawRandomWeapon(guaranteedSR = false) {
+  drawRandomEquipment(guaranteedSR = false) {
     let rand = Math.random() * 100;
 
     let targetRarity = 'N';
@@ -263,9 +374,13 @@ export class GachaManager {
       else targetRarity = 'N';
     }
 
-    const pool = WEAPONS.filter(w => w.rarity === targetRarity);
-    if (pool.length === 0) return WEAPONS[0];
+    const pool = EQUIPMENT_ITEMS.filter(w => w.rarity === targetRarity);
+    if (pool.length === 0) return EQUIPMENT_ITEMS[0];
     return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  drawRandomWeapon(guaranteedSR = false) {
+    return this.drawRandomEquipment(guaranteedSR);
   }
 
   clearCinematicTimeouts() {
@@ -434,7 +549,7 @@ export class GachaManager {
       if (!running) return;
       const shuffled = [...icons].sort(() => Math.random() - 0.5);
       slotEl.innerHTML = shuffled.slice(0, 5).map(ic =>
-        `<span class="slot-icon">${ic}</span>`
+        `<span class="gacha-spinner-icon">${ic}</span>`
       ).join('');
       frame++;
       speed = Math.min(speed + 3, 200);
@@ -640,76 +755,168 @@ export class GachaManager {
   }
 
   autoEquipStrongest() {
-    let bestWeaponId = this.app.state.equippedWeaponId || 'w_n1';
-    let bestAtk = this.getWeaponAtk(bestWeaponId);
-
-    if (Array.isArray(this.app.state.inventory)) {
-      this.app.state.inventory.forEach(id => {
-        const atk = this.getWeaponAtk(id);
-        if (atk > bestAtk) {
-          bestAtk = atk;
-          bestWeaponId = id;
-        }
-      });
+    if (!this.app.state.equipped) {
+      this.app.state.equipped = { weapon: 'w_n1', armor: 'a_n1', head: 'h_n1', accessory: 'acc_n1' };
     }
 
-    this.app.state.equippedWeaponId = bestWeaponId;
+    const slots = ['weapon', 'armor', 'head', 'accessory'];
+    const inventory = this.app.state.inventory || [];
+
+    slots.forEach(slot => {
+      let currentId = this.app.state.equipped[slot];
+      let bestId = currentId;
+      let bestAtk = currentId ? this.getItemAtk(currentId) : 0;
+
+      inventory.forEach(id => {
+        const item = EQUIPMENT_ITEMS.find(eq => eq.id === id);
+        if (item && item.slot === slot) {
+          const atk = this.getItemAtk(id);
+          if (atk > bestAtk) {
+            bestAtk = atk;
+            bestId = id;
+          }
+        }
+      });
+
+      if (bestId) this.app.state.equipped[slot] = bestId;
+    });
+
+    this.app.state.equippedWeaponId = this.app.state.equipped.weapon;
   }
 
   getEquippedWeapon() {
-    return WEAPONS.find(w => w.id === this.app.state.equippedWeaponId) || WEAPONS[0];
+    const wId = (this.app.state.equipped && this.app.state.equipped.weapon) || this.app.state.equippedWeaponId || 'w_n1';
+    return EQUIPMENT_ITEMS.find(w => w.id === wId) || EQUIPMENT_ITEMS[0];
   }
 
   updateEquippedDisplay() {
-    const weapon = this.getEquippedWeapon();
-    const atk = this.getWeaponAtk(weapon.id);
-    const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[weapon.id]) || 1;
-    const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[weapon.id]) || 0;
+    const stats = this.getLoadoutStats();
 
-    const nameEl = document.getElementById('equipped-name');
-    const iconEl = document.getElementById('equipped-icon');
-    const atkEl = document.getElementById('equipped-atk');
-    const rarityEl = document.getElementById('equipped-rarity');
-    const levelEl = document.getElementById('equipped-level-badge');
+    // Update Loadout Slots UI
+    const slotKeys = ['weapon', 'armor', 'head', 'accessory'];
+    slotKeys.forEach(slot => {
+      const itemId = stats.equipped[slot];
+      const item = EQUIPMENT_ITEMS.find(eq => eq.id === itemId) || EQUIPMENT_ITEMS.find(eq => eq.slot === slot);
+      if (!item) return;
 
-    if (nameEl) nameEl.textContent = `${weapon.name} ${dupes > 0 ? `★+${dupes}` : ''}`;
-    if (iconEl) iconEl.textContent = weapon.icon;
-    if (atkEl) atkEl.textContent = `ATK: +${this.app.formatNumber(atk)}`;
-    if (levelEl) levelEl.textContent = `Lv.${level}`;
-    if (rarityEl) {
-      rarityEl.textContent = weapon.rarity;
-      rarityEl.className = `rarity-tag rarity-${weapon.rarity.toLowerCase()}`;
+      const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[item.id]) || 1;
+      const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[item.id]) || 0;
+      const atk = this.getItemAtk(item.id);
+
+      const slotIconEl = document.getElementById(`loadout-icon-${slot}`);
+      const slotNameEl = document.getElementById(`loadout-name-${slot}`);
+      const slotStatEl = document.getElementById(`loadout-stat-${slot}`);
+      const slotRarityEl = document.getElementById(`loadout-rarity-${slot}`);
+      const slotLevelEl = document.getElementById(`loadout-level-${slot}`);
+
+      if (slotIconEl) slotIconEl.textContent = item.icon;
+      if (slotNameEl) slotNameEl.textContent = `${item.name} ${dupes > 0 ? `★+${dupes}` : ''}`;
+      if (slotStatEl) {
+        if (slot === 'weapon') slotStatEl.textContent = `ATK +${this.app.formatNumber(atk)}`;
+        else if (slot === 'armor') slotStatEl.textContent = `会心倍率 +${item.critMult}x`;
+        else if (slot === 'head') slotStatEl.textContent = `会心率 +${Math.round((item.critRate || 0)*100)}%`;
+        else if (slot === 'accessory') slotStatEl.textContent = `報酬Gems +${Math.round((item.gemBonus || 0)*100)}%`;
+      }
+      if (slotLevelEl) slotLevelEl.textContent = `Lv.${level}`;
+      if (slotRarityEl) {
+        slotRarityEl.textContent = item.rarity;
+        slotRarityEl.className = `rarity-tag rarity-${item.rarity.toLowerCase()}`;
+      }
+    });
+
+    // Update Overall Battle Power and Stats
+    const bpEl = document.getElementById('loadout-total-bp');
+    const atkEl = document.getElementById('loadout-total-atk');
+    const critEl = document.getElementById('loadout-total-crit');
+    const bonusEl = document.getElementById('loadout-total-bonus');
+    const setsContainer = document.getElementById('loadout-active-sets');
+
+    if (bpEl) bpEl.textContent = `⚡ 総合戦闘力: ${this.app.formatNumber(stats.battlePower)}`;
+    if (atkEl) atkEl.textContent = `⚔️ 合計ATK: +${this.app.formatNumber(stats.totalAtk)}`;
+    if (critEl) critEl.textContent = `💥 会心率: ${Math.round(stats.critRate * 100)}% (x${stats.critMult.toFixed(1)})`;
+    if (bonusEl) bonusEl.textContent = `💎 報酬UP: +${Math.round(stats.gemBonus * 100)}%`;
+
+    if (setsContainer) {
+      setsContainer.innerHTML = '';
+      if (stats.activeSetBonuses.length === 0) {
+        setsContainer.innerHTML = '<span class="set-none-text">発動中のセット効果: なし (同シリーズ装備で発動)</span>';
+      } else {
+        stats.activeSetBonuses.forEach(set => {
+          const badge = document.createElement('div');
+          badge.className = 'set-bonus-badge';
+          badge.style.borderColor = set.color;
+          badge.style.color = set.color;
+          badge.innerHTML = `<span>🌟 ${set.name}:</span> <strong>${set.label}</strong>`;
+          setsContainer.appendChild(badge);
+        });
+      }
     }
+
+    // Keep legacy single-weapon header in sync if present
+    const legacyName = document.getElementById('equipped-name');
+    const legacyIcon = document.getElementById('equipped-icon');
+    const legacyAtk = document.getElementById('equipped-atk');
+    const mainWeapon = this.getEquippedWeapon();
+    if (legacyName) legacyName.textContent = mainWeapon.name;
+    if (legacyIcon) legacyIcon.textContent = mainWeapon.icon;
+    if (legacyAtk) legacyAtk.textContent = `ATK: +${this.app.formatNumber(stats.totalAtk)}`;
   }
 
-  renderInventory() {
+  renderInventory(activeFilter = 'all') {
     const container = document.getElementById('inventory-list');
     if (!container) return;
 
+    this.currentInventoryFilter = activeFilter;
     container.innerHTML = '';
-    const ownedWeapons = WEAPONS.filter(w => (this.app.state.inventory || []).includes(w.id));
+    const ownedItems = EQUIPMENT_ITEMS.filter(w => (this.app.state.inventory || []).includes(w.id));
 
-    ownedWeapons.sort((a, b) => this.getWeaponAtk(b.id) - this.getWeaponAtk(a.id));
+    // Filter by slot
+    const filteredItems = activeFilter === 'all' 
+      ? ownedItems 
+      : ownedItems.filter(item => item.slot === activeFilter);
 
-    ownedWeapons.forEach(w => {
-      const isEquipped = w.id === this.app.state.equippedWeaponId;
-      const atk = this.getWeaponAtk(w.id);
-      const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[w.id]) || 1;
-      const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[w.id]) || 0;
-      const upgradeCost = this.getUpgradeCost(w.id);
+    filteredItems.sort((a, b) => this.getItemAtk(b.id) - this.getItemAtk(a.id));
 
-      const item = document.createElement('div');
-      item.className = `inventory-item glass-panel ${isEquipped ? 'is-equipped' : ''} rarity-${w.rarity.toLowerCase()}`;
+    if (filteredItems.length === 0) {
+      container.innerHTML = '<div class="empty-log-msg">該当する装備がありません。ガチャを引いて装備を手に入れよう！</div>';
+      return;
+    }
 
-      item.innerHTML = `
-        <div class="inv-icon">${w.icon}</div>
+    const equipped = this.app.state.equipped || {};
+
+    filteredItems.forEach(item => {
+      const isEquipped = equipped[item.slot] === item.id;
+      const atk = this.getItemAtk(item.id);
+      const level = (this.app.state.weaponLevels && this.app.state.weaponLevels[item.id]) || 1;
+      const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[item.id]) || 0;
+      const upgradeCost = this.getUpgradeCost(item.id);
+      const slotDef = EQUIP_SLOTS[item.slot] || { label: '装備', icon: '⚡' };
+      const seriesDef = SET_BONUSES[item.series];
+
+      const itemCard = document.createElement('div');
+      itemCard.className = `inventory-item glass-panel ${isEquipped ? 'is-equipped' : ''} rarity-${item.rarity.toLowerCase()}`;
+
+      let seriesBadgeHtml = '';
+      if (seriesDef) {
+        seriesBadgeHtml = `<span class="series-tag" style="border-color: ${seriesDef.color}; color: ${seriesDef.color};">${seriesDef.name.split('（')[0]}</span>`;
+      }
+
+      itemCard.innerHTML = `
+        <div class="inv-icon">${item.icon}</div>
         <div class="inv-info">
           <div class="inv-name-row">
-            <span class="inv-name">${w.name} ${dupes > 0 ? `<span class="dupe-star-tag">★+${dupes}</span>` : ''}</span>
-            <span class="rarity-tag rarity-${w.rarity.toLowerCase()}">${w.rarity}</span>
+            <span class="inv-slot-pill">${slotDef.icon} ${slotDef.label}</span>
+            ${seriesBadgeHtml}
+            <span class="inv-name">${item.name} ${dupes > 0 ? `<span class="dupe-star-tag">★+${dupes}</span>` : ''}</span>
+            <span class="rarity-tag rarity-${item.rarity.toLowerCase()}">${item.rarity}</span>
             <span class="inv-level-tag">Lv.${level}</span>
           </div>
-          <div class="inv-atk">攻撃力: <strong>+${this.app.formatNumber(atk)}</strong></div>
+          <div class="inv-atk">
+            ${item.slot === 'weapon' ? `攻撃力: <strong>+${this.app.formatNumber(atk)}</strong>` : ''}
+            ${item.slot === 'armor' ? `会心倍率: <strong>+${item.critMult}x</strong>` : ''}
+            ${item.slot === 'head' ? `会心率: <strong>+${Math.round((item.critRate || 0)*100)}%</strong>` : ''}
+            ${item.slot === 'accessory' ? `報酬Gems: <strong>+${Math.round((item.gemBonus || 0)*100)}%</strong>` : ''}
+          </div>
         </div>
         <div class="inv-actions">
           <button class="upgrade-btn ${this.app.state.coins >= upgradeCost ? 'can-upgrade' : ''}" title="コインで強化">
@@ -722,24 +929,17 @@ export class GachaManager {
         </div>
       `;
 
-      const equipBtn = item.querySelector('.equip-btn');
+      const equipBtn = itemCard.querySelector('.equip-btn');
       equipBtn.addEventListener('click', () => {
-        if (this.app.state.equippedWeaponId !== w.id) {
-          this.app.state.equippedWeaponId = w.id;
-          sound.playTap();
-          this.app.saveState();
-          this.renderInventory();
-          this.updateEquippedDisplay();
-          if (this.app.battle) this.app.battle.updateStatsDisplay();
-        }
+        this.equipItem(item.slot, item.id);
       });
 
-      const upgradeBtn = item.querySelector('.upgrade-btn');
+      const upgradeBtn = itemCard.querySelector('.upgrade-btn');
       upgradeBtn.addEventListener('click', () => {
-        this.upgradeWeapon(w.id);
+        this.upgradeItem(item.id);
       });
 
-      container.appendChild(item);
+      container.appendChild(itemCard);
     });
   }
 }

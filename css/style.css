@@ -99,16 +99,30 @@ body {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* Main Container */
+/* Main App Viewport Shell (Soshage Style / Fixed Header & Footer) */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-main);
+}
+
 #app {
-  max-width: 1280px;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 680px;
   margin: 0 auto;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 12px 16px;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
   position: relative;
+  box-sizing: border-box;
 }
 
 /* PWA Install Promotion Banner */
@@ -249,18 +263,32 @@ body {
   display: none;
 }
 
-/* Main Grid Layout */
+/* Main App Content Layout (Always Tabbed / SPA Style) */
 .main-content-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 10px 20px 10px;
+  box-sizing: border-box;
 }
 
 .app-section {
-  display: flex;
+  display: none;
   flex-direction: column;
-  height: 100%;
+  width: 100%;
+  animation: section-fade-in 0.2s ease-out forwards;
+}
+
+.app-section.active {
+  display: flex;
+}
+
+@keyframes section-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .section-header {
@@ -281,46 +309,75 @@ body {
   gap: 6px;
 }
 
-/* Mobile Bottom Navigation Bar */
+/* Permanent Game Bottom Navigation Bar (Soshage / Puzzle & Dragons Style) */
+.game-footer-nav,
 .mobile-nav-bar {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  background: rgba(13, 13, 24, 0.96);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border-glass);
-  padding: 6px 12px;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-  z-index: 800;
-  justify-content: space-around;
+  flex-shrink: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  width: 100% !important;
+  height: 62px !important;
+  background: linear-gradient(180deg, #18182c 0%, #0c0c18 100%) !important;
+  border-top: 2px solid rgba(0, 243, 255, 0.4) !important;
+  padding: 2px 4px !important;
+  padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 1000 !important;
+  box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+  box-sizing: border-box !important;
 }
 
 .nav-tab-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 800;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   cursor: pointer;
-  padding: 6px 16px;
-  border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  padding: 2px 0;
+  border-radius: var(--radius-sm);
+  transition: all 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: 100%;
+  height: 100%;
+  user-select: none;
 }
 
 .nav-tab-btn .tab-icon {
-  font-size: 18px;
+  font-size: 20px;
+  transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.nav-tab-btn .tab-label {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.nav-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .nav-tab-btn.active {
-  color: var(--neon-green);
-  background: rgba(0, 255, 136, 0.1);
-  box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+  color: #ffffff;
+  background: linear-gradient(180deg, rgba(0, 243, 255, 0.22), rgba(0, 255, 136, 0.12));
+  border-color: rgba(0, 243, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.3), inset 0 0 8px rgba(0, 255, 136, 0.2);
+}
+
+.nav-tab-btn.active .tab-icon {
+  transform: translateY(-2px) scale(1.18);
+  filter: drop-shadow(0 0 8px var(--neon-cyan));
+}
+
+.nav-tab-btn.active .tab-label {
+  color: var(--neon-cyan);
+  font-weight: 900;
 }
 
 /* Modal Framework */
@@ -521,23 +578,13 @@ body {
   100% { transform: translate(0, 0); }
 }
 
-/* Responsive Media Queries */
-@media (max-width: 992px) {
-  .main-content-grid {
-    grid-template-columns: 1fr;
-    display: block;
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 8px 12px;
   }
-
-  .app-section {
-    display: none;
-  }
-
-  .app-section.active {
-    display: flex;
-  }
-
-  .mobile-nav-bar {
-    display: flex;
+  .brand-title {
+    font-size: 16px;
   }
 }
 

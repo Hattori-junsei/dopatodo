@@ -609,15 +609,23 @@ export class GachaManager {
     container.innerHTML = '';
     this.unopenedCount = results.length;
 
-    if (skipBtn) skipBtn.style.display = 'inline-block';
+    if (results.length === 1) {
+      container.className = 'gacha-cards-grid is-single-draw';
+    } else {
+      container.className = 'gacha-cards-grid';
+    }
+
+    if (skipBtn) skipBtn.style.display = results.length > 1 ? 'inline-block' : 'none';
 
     results.forEach((weapon, idx) => {
       const cardWrap = document.createElement('div');
       cardWrap.className = `flip-card-wrapper rarity-${weapon.rarity.toLowerCase()}`;
       cardWrap.dataset.index = idx;
 
-      const atk = this.getWeaponAtk(weapon.id);
+      const atk = this.getItemAtk(weapon.id);
       const dupes = (this.app.state.weaponDuplicates && this.app.state.weaponDuplicates[weapon.id]) || 0;
+      const slotDef = EQUIP_SLOTS[weapon.slot] || { label: '武器', icon: '🗡️' };
+      const seriesDef = SET_BONUSES[weapon.series];
       
       // Determine aura on card back (If surprise, show SR gold aura first!)
       let auraClass = '';
@@ -631,20 +639,50 @@ export class GachaManager {
         auraClass = 'aura-sr';
       }
 
+      let seriesBadgeHtml = '';
+      if (seriesDef) {
+        seriesBadgeHtml = `<span class="card-series-tag" style="border-color: ${seriesDef.color}; color: ${seriesDef.color};">${seriesDef.name.split('（')[0]}</span>`;
+      }
+
       cardWrap.innerHTML = `
         <div class="flip-card-inner">
           <!-- Back of card (Hidden) -->
           <div class="flip-card-back ${auraClass}">
+            <div class="card-back-slot-tag">${slotDef.icon} ${slotDef.label}</div>
             <div class="card-back-pattern">⚡</div>
             <div class="card-back-tap-hint">TAP TO REVEAL</div>
           </div>
-          <!-- Front of card (Revealed) -->
+          <!-- Front of card (Revealed with Full Stats) -->
           <div class="flip-card-front gacha-card rarity-${weapon.rarity.toLowerCase()}">
-            <div class="card-rarity-badge">${weapon.rarity}</div>
-            ${weapon.isDupe ? `<div class="card-dupe-badge">★+${dupes} 凸</div>` : '<div class="card-new-badge">NEW!</div>'}
+            <div class="card-top-badges">
+              <span class="card-slot-badge">${slotDef.icon} ${slotDef.label}</span>
+              ${seriesBadgeHtml}
+              <span class="card-rarity-badge">${weapon.rarity}</span>
+            </div>
+            ${weapon.isDupe ? `<div class="card-dupe-badge">★+${dupes} 凸 (ATK+${dupes*15}%)</div>` : '<div class="card-new-badge">✨ NEW!</div>'}
             <div class="card-icon">${weapon.icon}</div>
             <div class="card-name">${weapon.name}</div>
-            <div class="card-atk">ATK: <span>+${this.app.formatNumber(atk)}</span></div>
+
+            <!-- Full Stats Matrix -->
+            <div class="card-stats-grid">
+              <div class="card-stat-chip">
+                <span class="stat-lbl">⚔️ ATK</span>
+                <span class="stat-val stat-atk">+${this.app.formatNumber(atk)}</span>
+              </div>
+              <div class="card-stat-chip">
+                <span class="stat-lbl">💥 会心率</span>
+                <span class="stat-val stat-crit">+${Math.round((weapon.critRate || 0)*100)}%</span>
+              </div>
+              <div class="card-stat-chip">
+                <span class="stat-lbl">⚡ 会心倍率</span>
+                <span class="stat-val stat-mult">+${weapon.critMult || 1.5}x</span>
+              </div>
+              <div class="card-stat-chip">
+                <span class="stat-lbl">💎 報酬UP</span>
+                <span class="stat-val stat-gem">+${Math.round((weapon.gemBonus || 0)*100)}%</span>
+              </div>
+            </div>
+
             <div class="card-desc">${weapon.desc}</div>
           </div>
         </div>
@@ -676,8 +714,8 @@ export class GachaManager {
     weapon.isSurprise = false; // Trigger once
     try { sound.playShoukaku(); } catch(e) {}
     try { sound.playKyuin(); } catch(e) {}
-    try { fx.screenShake(20, 400); } catch(e) {}
-    try { fx.flash('rgba(255, 215, 0, 0.7)', 300); } catch(e) {}
+    try { fx.screenShake(24, 500); } catch(e) {}
+    try { fx.flash('rgba(255, 215, 0, 0.85)', 400); } catch(e) {}
 
     // Show floating rank-up cutin on screen
     const cutinEl = document.createElement('div');
@@ -688,7 +726,7 @@ export class GachaManager {
     setTimeout(() => {
       cutinEl.remove();
       this.executeCardFlip(cardWrap, weapon);
-    }, 400);
+    }, 450);
   }
 
   executeCardFlip(cardWrap, weapon) {
@@ -704,15 +742,30 @@ export class GachaManager {
     const cy = rect.top + rect.height / 2;
 
     if (weapon.rarity === 'UR') {
-      try { fx.createGoldSparksFX(cx, cy, 50, 'rainbow'); } catch(e) {}
-      try { fx.flash('rgba(0, 255, 136, 0.5)', 250); } catch(e) {}
-      try { fx.screenShake(15, 300); } catch(e) {}
+      try { sound.playRainbowFanfare(); } catch(e) {}
+      try { fx.createGoldSparksFX(cx, cy, 60, 'rainbow'); } catch(e) {}
+      try { fx.createRainbowConfetti(); } catch(e) {}
+      try { fx.flash('rgba(0, 255, 136, 0.6)', 300); } catch(e) {}
+      try { fx.screenShake(18, 350); } catch(e) {}
+
+      // Show GOD TIER pop banner
+      const godEl = document.createElement('div');
+      godEl.className = 'god-tier-flip-cutin';
+      godEl.innerHTML = `🌌 神話降臨 ✦ UR「${weapon.name}」獲得！！ 🌌`;
+      document.body.appendChild(godEl);
+      setTimeout(() => godEl.remove(), 1200);
+
     } else if (weapon.rarity === 'SSR') {
-      try { fx.createGoldSparksFX(cx, cy, 40, 'ssr'); } catch(e) {}
-      try { fx.flash('rgba(255, 0, 127, 0.5)', 250); } catch(e) {}
-      try { fx.screenShake(10, 250); } catch(e) {}
+      try { sound.playKyuin(); } catch(e) {}
+      try { fx.createGoldSparksFX(cx, cy, 45, 'ssr'); } catch(e) {}
+      try { fx.flash('rgba(255, 0, 127, 0.55)', 250); } catch(e) {}
+      try { fx.screenShake(12, 280); } catch(e) {}
     } else if (weapon.rarity === 'SR') {
-      try { fx.createGoldSparksFX(cx, cy, 25, 'gold'); } catch(e) {}
+      try { fx.createGoldSparksFX(cx, cy, 30, 'gold'); } catch(e) {}
+    }
+
+    if (weapon.isDupe) {
+      try { sound.playUpgrade(); } catch(e) {}
     }
 
     if (this.unopenedCount <= 0) {
@@ -911,11 +964,11 @@ export class GachaManager {
             <span class="rarity-tag rarity-${item.rarity.toLowerCase()}">${item.rarity}</span>
             <span class="inv-level-tag">Lv.${level}</span>
           </div>
-          <div class="inv-atk">
-            ${item.slot === 'weapon' ? `攻撃力: <strong>+${this.app.formatNumber(atk)}</strong>` : ''}
-            ${item.slot === 'armor' ? `会心倍率: <strong>+${item.critMult}x</strong>` : ''}
-            ${item.slot === 'head' ? `会心率: <strong>+${Math.round((item.critRate || 0)*100)}%</strong>` : ''}
-            ${item.slot === 'accessory' ? `報酬Gems: <strong>+${Math.round((item.gemBonus || 0)*100)}%</strong>` : ''}
+          <div class="inv-atk-chips-row">
+            <span class="inv-chip chip-atk">⚔️ ATK +${this.app.formatNumber(atk)}</span>
+            ${item.critRate > 0 ? `<span class="inv-chip chip-crit">💥 会心率 +${Math.round(item.critRate*100)}%</span>` : ''}
+            ${item.critMult > 0 ? `<span class="inv-chip chip-mult">⚡ 倍率 +${item.critMult}x</span>` : ''}
+            ${item.gemBonus > 0 ? `<span class="inv-chip chip-gem">💎 報酬 +${Math.round(item.gemBonus*100)}%</span>` : ''}
           </div>
         </div>
         <div class="inv-actions">

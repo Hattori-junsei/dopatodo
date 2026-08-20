@@ -54,10 +54,16 @@ export class TodoManager {
     const timePicker = document.getElementById('task-due-time-input');
 
     const handleAdd = () => {
+      if (!input) return;
       const text = input.value.trim();
-      if (!text) return;
-      const tag = tagSelect ? tagSelect.value : 'work';
-      const diff = diffSelect ? parseInt(diffSelect.value, 10) : this.selectedDifficulty;
+      if (!text) {
+        input.focus();
+        return;
+      }
+
+      const tag = (tagSelect && tagSelect.value) ? tagSelect.value : 'work';
+      const diffVal = diffSelect ? parseInt(diffSelect.value, 10) : 2;
+      const diff = (!isNaN(diffVal) && diffVal >= 1 && diffVal <= 5) ? diffVal : (this.selectedDifficulty || 2);
 
       let dueTimestamp = null;
       if (timePicker && timePicker.value) {
@@ -72,17 +78,39 @@ export class TodoManager {
         dueTimestamp = Date.now() + this.selectedDueMinutes * 60 * 1000;
       }
 
+      // Ensure we switch to tasks subtab if user was looking at routines/history
+      const tasksPane = document.getElementById('todo-pane-tasks');
+      const subtabBtns = document.querySelectorAll('.todo-subtab-btn');
+      const panes = document.querySelectorAll('.todo-subtab-pane');
+      if (tasksPane && !tasksPane.classList.contains('active')) {
+        subtabBtns.forEach(b => b.classList.toggle('active', b.dataset.subtab === 'tasks'));
+        panes.forEach(p => p.classList.toggle('active', p.id === 'todo-pane-tasks'));
+      }
+
+      // Reset tag filter so the newly added task is guaranteed to be visible
+      this.app.state.currentTagFilter = 'all';
+      this.renderTagFilters();
+
       this.addTask(text, diff, tag, null, dueTimestamp);
       input.value = '';
       if (timePicker) timePicker.value = '';
       this.resetDueButtons();
-      sound.playTap();
+      try { sound.playCoin(); } catch(e) {}
     };
 
-    if (addBtn) addBtn.addEventListener('click', handleAdd);
+    if (addBtn) {
+      addBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleAdd();
+      });
+    }
+
     if (input) {
       input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleAdd();
+        if (e.key === 'Enter' && !e.isComposing) {
+          e.preventDefault();
+          handleAdd();
+        }
       });
     }
 

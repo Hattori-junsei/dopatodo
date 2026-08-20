@@ -1,28 +1,28 @@
 // js/data.js - DopaTodo Master Data & State Schema
 // Supported Recurring Frequencies: daily, weekdays, weekends, weekly, monthly
 
-export const APP_VERSION = '2.2.0';
+export const APP_VERSION = '2.3.0';
 
 export const RELEASE_NOTES = {
-  version: '2.2.0',
-  title: '💥 DopaTodo v2.2 ドーパミン戦闘＆報酬ルーレット解禁！',
+  version: '2.3.0',
+  title: '✨ DopaTodo v2.3 UIスリム化＆広告リワード解禁！',
   date: '2026-08-20',
   giftGems: 300,
   features: [
     {
+      icon: '🧹',
+      title: 'UIスリム化（FEVER撤去）',
+      desc: 'FEVERゲージを整理し、ToDo画面がよりシンプルで集中しやすいレイアウトに生まれ変わりました。'
+    },
+    {
+      icon: '🎁',
+      title: '広告応援リワード（💎 無料ジェム獲得）',
+      desc: 'ガチャ画面に広告応援枠を新設！タップして応援するとガチャ石を無料で獲得できます。'
+    },
+    {
       icon: '⚔️',
-      title: '極限ドーパミン・バトルダメージ表記',
-      desc: '3Dポップアップ、鮮烈ネオングロー、斬撃スラッシュ光線、火花パーティクル、コンボチェインバッジを完全搭載！'
-    },
-    {
-      icon: '🎲',
-      title: 'タスク粉砕報酬ルーレット ＆ レンジ抽選',
-      desc: 'タスク完了時にカチカチ数字が回るルーレットが出現！最大値付近を引くとJACKPOT大当り演出が炸裂！'
-    },
-    {
-      icon: '🎰',
-      title: 'ガチャ演出強化（レバー引き ＆ 全画面カットイン）',
-      desc: 'ガチャボタンのレバー引きアニメ、10連スロットスクロール、SSR/UR確定時の大迫力全画面カットインを搭載！'
+      title: '超ド迫力バトルダメージ表記',
+      desc: '3Dポップアップ、斬撃スラッシュ、火花パーティクル、コンボチェインバッジを完全搭載！'
     }
   ]
 };
@@ -175,10 +175,8 @@ export const INITIAL_STATE = {
   activeSlot: 1,
   gems: 300,
   coins: 500,
-  feverGauge: 0,
-  isFever: false,
-  feverTimeLeft: 0,
   comboCount: 0,
+  dailyAdWatches: 0,
   equippedWeaponId: 'w_n1',
   inventory: ['w_n1'],
   weaponLevels: { 'w_n1': 1 },

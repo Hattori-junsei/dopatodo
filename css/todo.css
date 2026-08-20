@@ -1,27 +1,34 @@
 /* css/todo.css - Clean, High-Dopamine & Structured ToDo Layout */
 
-/* Fever / Combo Section (Slim & Punchy) */
-.fever-container {
-  padding: 8px 12px;
-  margin-bottom: 10px;
-  background: linear-gradient(135deg, rgba(255, 0, 127, 0.12), rgba(0, 243, 255, 0.06));
-  border: 1px solid rgba(255, 0, 127, 0.3);
+/* Focus Time Attack & Combo Bar (Sleek & Integrated) */
+.focus-timer-section {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 12px;
   border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
 }
 
-.fever-top-row {
+.focus-timer-left {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  gap: 8px;
 }
 
 .combo-badge {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
-  color: var(--neon-pink);
-  text-shadow: var(--shadow-neon-pink);
+  color: var(--neon-cyan);
+  background: rgba(0, 243, 255, 0.12);
+  border: 1px solid var(--neon-cyan);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
 }
 
 .combo-bounce {
@@ -34,50 +41,64 @@
   100% { transform: scale(1); }
 }
 
-.fever-gauge-track {
-  width: 100%;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: var(--radius-full);
+/* In-Content Ad Banner Slot */
+.ad-banner-slot {
+  margin-top: 14px;
+  margin-bottom: 6px;
+  padding: 10px 14px;
+  background: rgba(10, 10, 20, 0.7);
+  border: 1px dashed rgba(0, 243, 255, 0.3);
+  border-radius: var(--radius-md);
+  position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
 }
 
-.fever-gauge-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink), var(--neon-gold));
-  background-size: 200% 100%;
-  animation: gradient-scroll 2s linear infinite;
-  border-radius: var(--radius-full);
-  box-shadow: 0 0 10px var(--neon-pink);
-  transition: width 0.3s ease;
+.ad-banner-slot:hover {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 243, 255, 0.04);
 }
 
-@keyframes gradient-scroll {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-
-.fever-time-text {
-  margin-top: 4px;
-  font-size: 11px;
+.ad-label-tag {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 8px;
   font-weight: 800;
-  color: var(--neon-gold);
-  text-align: center;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 4px;
+  border-radius: 2px;
 }
 
-/* Focus Time Attack Bar */
-.focus-timer-section {
-  margin-bottom: 8px;
+.ad-banner-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-glass);
+  gap: 10px;
+}
+
+.ad-banner-icon {
+  font-size: 22px;
+  filter: drop-shadow(0 0 8px var(--neon-cyan));
+}
+
+.ad-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ad-banner-title {
+  font-size: 11px;
+  color: var(--text-main);
+  font-weight: 800;
+}
+
+.ad-banner-sub {
+  font-size: 9px;
+  color: var(--text-dim);
+}
 }
 
 .focus-timer-label {
@@ -990,7 +1011,195 @@
 }
 
 .due-snooze-action-btn:hover {
-  background: rgba(255, 215, 0, 0.15);
-  color: var(--neon-gold);
-  border-color: var(--neon-gold);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* =====================================================
+   TODO SUB-TAB NAVIGATION SYSTEM (3分割サブタブUI)
+   ===================================================== */
+.todo-subnav-bar {
+  display: flex;
+  gap: 6px;
+  background: rgba(10, 10, 20, 0.6);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-glass);
+  margin-bottom: 12px;
+}
+
+.todo-subtab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.todo-subtab-btn .subtab-icon {
+  font-size: 14px;
+}
+
+.todo-subtab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.todo-subtab-btn.active {
+  background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(0, 255, 136, 0.15));
+  border-color: var(--neon-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.35);
+  transform: scale(1.02);
+}
+
+/* Subtab Panes */
+.todo-subtab-pane {
+  display: none;
+  animation: pane-fade-in 0.25s ease-out forwards;
+}
+
+.todo-subtab-pane.active {
+  display: block;
+}
+
+@keyframes pane-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Routine Manager Panel */
+.routine-manager-panel {
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  background: radial-gradient(circle at 50% 0%, rgba(0, 255, 136, 0.08), rgba(10, 15, 25, 0.85));
+}
+
+.routine-panel-header {
+  margin-bottom: 10px;
+}
+
+.routine-panel-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--neon-green);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routine-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.routine-form-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-routine-submit-btn {
+  background: linear-gradient(135deg, var(--neon-green), #00cc66);
+  border: none;
+  color: #07070d;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 11px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  transition: all 0.2s ease;
+}
+
+.add-routine-submit-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+}
+
+.routine-list-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sync-routine-action-btn {
+  background: rgba(0, 243, 255, 0.1);
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sync-routine-action-btn:hover {
+  background: rgba(0, 243, 255, 0.25);
+  box-shadow: 0 0 12px rgba(0, 243, 255, 0.5);
+}
+
+.subtab-summon-btn {
+  padding: 3px 8px;
+  font-size: 9px;
+}
+
+/* History Summary Grid */
+.log-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.log-stat-card {
+  padding: 10px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.log-stat-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.log-stat-val {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.log-timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.log-item-row.glass-panel {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }

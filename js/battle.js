@@ -127,10 +127,6 @@ export class BattleManager {
 
     let baseAtk = atkPower * multiplier;
 
-    if (this.app.state && this.app.state.isFever) {
-      baseAtk *= 3;
-    }
-
     const isCrit = Math.random() < 0.25 || isManual;
     const finalDamage = Math.max(1, Math.round(baseAtk * (isCrit ? (2.5 + Math.random()) : (0.9 + Math.random() * 0.2))));
 
@@ -211,9 +207,8 @@ export class BattleManager {
       targetEl.classList.add('monster-defeated');
     }
 
-    const mult = (this.app.state && this.app.state.isFever) ? 2 : 1;
-    const earnedGems = this.currentMonster.rewardGems * mult;
-    const earnedCoins = this.currentMonster.rewardCoins * mult;
+    const earnedGems = this.currentMonster.rewardGems;
+    const earnedCoins = this.currentMonster.rewardCoins;
 
     if (this.app.state) {
       this.app.state.gems = (this.app.state.gems || 0) + earnedGems;

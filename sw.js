@@ -1,5 +1,5 @@
 // sw.js - Service Worker for Offline & Network-First Fresh Caching
-const CACHE_NAME = 'dopatodo-v2.2.1';
+const CACHE_NAME = 'dopatodo-v2.4.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

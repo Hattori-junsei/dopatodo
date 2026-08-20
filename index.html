@@ -26,10 +26,10 @@
   <meta name="twitter:image" content="icons/icon-512.svg">
 
   <!-- CSS with Cache-Buster -->
-  <link rel="stylesheet" href="css/style.css?v=2.2.1">
-  <link rel="stylesheet" href="css/todo.css?v=2.2.1">
-  <link rel="stylesheet" href="css/battle.css?v=2.2.1">
-  <link rel="stylesheet" href="css/gacha.css?v=2.2.1">
+  <link rel="stylesheet" href="css/style.css?v=2.4.0">
+  <link rel="stylesheet" href="css/todo.css?v=2.4.0">
+  <link rel="stylesheet" href="css/battle.css?v=2.4.0">
+  <link rel="stylesheet" href="css/gacha.css?v=2.4.0">
 </head>
 <body>
 
@@ -310,101 +310,193 @@
     <!-- Main 3-Column / Tabbed Grid -->
     <main class="main-content-grid">
 
-      <!-- ================= 1. ToDo Section (Clean & Structured UI) ================= -->
+      <!-- ================= 1. ToDo Section (Sub-Tab Architecture) ================= -->
       <section id="section-todo" class="app-section active">
-        <div class="section-header">
-          <h2 class="section-title"><span>📝</span> DOPA TODO</h2>
-          <div style="display: flex; gap: 6px;">
-            <button id="open-routine-modal-btn" class="header-btn" style="padding: 4px 8px; font-size: 11px;">🔄 定期日課</button>
-            <button id="view-log-btn" class="header-btn" style="padding: 4px 8px; font-size: 11px;">📜 討伐ログ</button>
-          </div>
+        
+        <!-- Sleek Sub-Tab Navigation Bar -->
+        <div class="todo-subnav-bar">
+          <button class="todo-subtab-btn active" data-subtab="tasks">
+            <span class="subtab-icon">⚡</span>
+            <span>いま粉砕</span>
+          </button>
+          <button class="todo-subtab-btn" data-subtab="routines">
+            <span class="subtab-icon">🔄</span>
+            <span>定期日課</span>
+          </button>
+          <button class="todo-subtab-btn" data-subtab="history">
+            <span class="subtab-icon">📜</span>
+            <span>討伐履歴</span>
+          </button>
         </div>
 
-        <!-- Fever / Combo Banner -->
-        <div class="fever-container glass-panel">
-          <div class="fever-top-row">
-            <span id="combo-display" class="combo-badge">0 COMBO</span>
-            <span style="font-size: 10px; color: var(--text-muted);">連続粉砕でFEVER! (報酬2倍)</span>
-          </div>
-          <div class="fever-gauge-track">
-            <div id="fever-gauge-fill" class="fever-gauge-fill"></div>
-          </div>
-          <div id="fever-time-display" class="fever-time-text" style="display: none;"></div>
-        </div>
-
-        <!-- Focus Timer Bar (Time Attack) -->
-        <div class="focus-timer-section">
-          <span class="focus-timer-label">⏱️ タイムアタック:</span>
-          <div class="focus-timer-presets">
-            <button class="focus-timer-preset-btn" data-min="3">3分</button>
-            <button class="focus-timer-preset-btn" data-min="5">5分</button>
-            <button class="focus-timer-preset-btn" data-min="15">15分</button>
-          </div>
-        </div>
-
-        <!-- Active Focus Timer Banner -->
-        <div id="focus-timer-active-bar" class="focus-timer-active-bar">
-          <span style="font-size: 11px; color: var(--neon-pink); font-weight: 800;">🔥 集中モード発動中！ (石1.5倍)</span>
-          <span id="focus-timer-clock" class="focus-clock-display">00:00</span>
-          <button id="focus-timer-stop-btn" class="focus-stop-btn">終了</button>
-        </div>
-
-        <!-- Tag Filters -->
-        <div id="tag-filter-chips" class="tag-filter-container"></div>
-
-        <!-- Integrated Smart Task Input Card with Quick Due Timer -->
-        <div class="task-input-card glass-panel">
-          <div class="task-input-main-row">
-            <select id="task-diff-inline-select" class="task-diff-select" title="難易度を選択"></select>
-            <select id="task-tag-select" class="task-tag-select" title="ジャンルを選択">
-              <option value="work">💼 仕事</option>
-              <option value="study">📚 勉強</option>
-              <option value="life">🏠 生活</option>
-              <option value="health">💪 健康</option>
-              <option value="easy">🔥 10秒</option>
-            </select>
-            <input type="text" id="task-input" class="task-input" placeholder="タスクを入力... (Enterで追加)">
-            <button id="add-task-btn" class="add-task-btn">+ 追加</button>
-          </div>
-          <div class="task-input-options-row">
-            <div class="due-options-wrap">
-              <span class="due-label">⏰ 締切:</span>
-              <button type="button" class="due-quick-btn active" data-min="0">なし</button>
-              <button type="button" class="due-quick-btn" data-min="15">+15分</button>
-              <button type="button" class="due-quick-btn" data-min="30">+30分</button>
-              <button type="button" class="due-quick-btn" data-min="60">+1時間</button>
-              <input type="time" id="task-due-time-input" class="due-time-picker" title="指定時刻に締切リマインド">
+        <!-- ================= Subtab Pane 1: Tasks (いま粉砕) ================= -->
+        <div id="todo-pane-tasks" class="todo-subtab-pane active">
+          
+          <!-- Focus Timer & Combo Bar -->
+          <div class="focus-timer-section">
+            <div class="focus-timer-left">
+              <span id="combo-display" class="combo-badge">0 COMBO</span>
+              <span class="focus-timer-label">⏱️ 集中アタック:</span>
             </div>
-            <button id="toggle-presets-btn" class="toggle-presets-btn">⚡ プリセット ▼</button>
-          </div>
-          <div id="presets-collapse-wrap" class="presets-collapse-wrap">
-            <div id="preset-tasks-container" class="preset-chips-scroll"></div>
-          </div>
-        </div>
-
-        <!-- Dedicated On-Screen Routine Widget (Always Visible) -->
-        <div class="routine-widget-card glass-panel">
-          <div class="routine-widget-header">
-            <div class="routine-widget-title">
-              <span>🔄</span>
-              <span>定期ルーティン（日課・週課・月課）</span>
+            <div class="focus-timer-presets">
+              <button class="focus-timer-preset-btn" data-min="3">3分</button>
+              <button class="focus-timer-preset-btn" data-min="5">5分</button>
+              <button class="focus-timer-preset-btn" data-min="15">15分</button>
             </div>
-            <button id="open-routine-modal-btn-inline" class="routine-settings-btn">⚙️ 設定・新規登録</button>
           </div>
-          <div id="routine-widget-chips" class="routine-widget-chips"></div>
+
+          <!-- Active Focus Timer Banner -->
+          <div id="focus-timer-active-bar" class="focus-timer-active-bar">
+            <span style="font-size: 11px; color: var(--neon-pink); font-weight: 800;">🔥 集中モード発動中！ (石1.5倍)</span>
+            <span id="focus-timer-clock" class="focus-clock-display">00:00</span>
+            <button id="focus-timer-stop-btn" class="focus-stop-btn">終了</button>
+          </div>
+
+          <!-- Integrated Smart Task Input Card with Quick Due Timer -->
+          <div class="task-input-card glass-panel">
+            <div class="task-input-main-row">
+              <select id="task-diff-inline-select" class="task-diff-select" title="難易度を選択"></select>
+              <select id="task-tag-select" class="task-tag-select" title="ジャンルを選択">
+                <option value="work">💼 仕事</option>
+                <option value="study">📚 勉強</option>
+                <option value="life">🏠 生活</option>
+                <option value="health">💪 健康</option>
+                <option value="easy">🔥 10秒</option>
+              </select>
+              <input type="text" id="task-input" class="task-input" placeholder="タスクを入力... (Enterで追加)">
+              <button id="add-task-btn" class="add-task-btn">+ 追加</button>
+            </div>
+            <div class="task-input-options-row">
+              <div class="due-options-wrap">
+                <span class="due-label">⏰ 締切:</span>
+                <button type="button" class="due-quick-btn active" data-min="0">なし</button>
+                <button type="button" class="due-quick-btn" data-min="15">+15分</button>
+                <button type="button" class="due-quick-btn" data-min="30">+30分</button>
+                <button type="button" class="due-quick-btn" data-min="60">+1時間</button>
+                <input type="time" id="task-due-time-input" class="due-time-picker" title="指定時刻に締切リマインド">
+              </div>
+              <button id="toggle-presets-btn" class="toggle-presets-btn">⚡ プリセット ▼</button>
+            </div>
+            <div id="presets-collapse-wrap" class="presets-collapse-wrap">
+              <div id="preset-tasks-container" class="preset-chips-scroll"></div>
+            </div>
+          </div>
+
+          <!-- Tag Filters -->
+          <div id="tag-filter-chips" class="tag-filter-container"></div>
+
+          <!-- Task List Header -->
+          <div class="task-list-title-row">
+            <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">📋 現在のToDoタスク（粉砕待機中）:</span>
+          </div>
+
+          <!-- Task List Container -->
+          <div id="todo-list" class="todo-list-container"></div>
+          <div id="todo-empty" class="empty-notice-card" style="display: none;">
+            <div class="empty-icon">🎉</div>
+            <div class="empty-title">すべてのタスクを粉砕完了！</div>
+            <div class="empty-desc">上の入力欄から新しいタスクを追加するか、定期日課タブから日課を召喚しよう！</div>
+          </div>
+
+          <!-- In-Content Ad Banner Slot (ToDo画面下部) -->
+          <div class="ad-banner-slot glass-panel" id="ad-banner-todo">
+            <div class="ad-label-tag">SPONSORED</div>
+            <div class="ad-banner-inner">
+              <div class="ad-banner-icon">⚡</div>
+              <div class="ad-banner-info">
+                <strong class="ad-banner-title">DopaTodo Pro 開発応援スポンサー枠</strong>
+                <span class="ad-banner-sub">Google AdSense / バナー広告掲載スペース (320x50 / 728x90)</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Task List Header -->
-        <div class="task-list-title-row">
-          <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">📋 現在のToDoタスク（粉砕待機中）:</span>
+        <!-- ================= Subtab Pane 2: Routines (定期日課) ================= -->
+        <div id="todo-pane-routines" class="todo-subtab-pane">
+          
+          <!-- Add Routine Form Card -->
+          <div class="routine-manager-panel glass-panel">
+            <div class="routine-panel-header">
+              <h3 class="routine-panel-title"><span>➕</span> 新しい定期日課を登録</h3>
+            </div>
+            <div class="routine-form-grid">
+              <input type="text" id="subtab-routine-text-input" class="task-input" placeholder="日課の名前を入力 (例: 朝の筋トレ、週次の机掃除)">
+              <div class="routine-form-row">
+                <select id="subtab-routine-diff-select" class="task-diff-select">
+                  <option value="1">★ 10秒ドパ</option>
+                  <option value="2">★★ イージー</option>
+                  <option value="3" selected>★★★ ノーマル</option>
+                  <option value="4">★★★★ ハード</option>
+                  <option value="5">★★★★★ ボス級</option>
+                </select>
+                <select id="subtab-routine-tag-select" class="task-tag-select">
+                  <option value="health">💪 健康</option>
+                  <option value="work">💼 仕事</option>
+                  <option value="study">📚 勉強</option>
+                  <option value="life">🏠 生活</option>
+                  <option value="easy">🔥 10秒</option>
+                </select>
+                <select id="subtab-routine-freq-select" class="routine-freq-select">
+                  <option value="daily">毎日</option>
+                  <option value="weekdays">平日のみ (月〜金)</option>
+                  <option value="weekends">土日のみ</option>
+                  <option value="weekly">毎週 (指定曜日)</option>
+                  <option value="monthly">毎月 (指定日)</option>
+                </select>
+              </div>
+              <div id="subtab-routine-freq-sub-wrap" class="routine-freq-sub-wrap" style="display: none;">
+                <select id="subtab-routine-freq-sub-select" class="task-tag-select"></select>
+              </div>
+              <div class="routine-form-row" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 11px; color: var(--text-muted);">通知時刻:</span>
+                  <input type="time" id="subtab-routine-time-input" class="due-time-picker" value="08:00">
+                </div>
+                <button id="subtab-add-routine-btn" class="add-routine-submit-btn">+ 登録する</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Routine List Header & Actions -->
+          <div class="routine-list-header-row">
+            <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">📋 登録済みの定期日課:</span>
+            <button id="subtab-sync-routine-btn" class="sync-routine-action-btn">🔄 今すぐ同期チェック</button>
+          </div>
+
+          <!-- Routine Items Container -->
+          <div id="subtab-routine-items-list" class="routine-list-container"></div>
+
         </div>
 
-        <!-- Task List -->
-        <div id="todo-list" class="todo-list-container"></div>
-        <div id="todo-empty" class="todo-empty-state" style="display: none;">
-          <span class="empty-icon">🎉</span>
-          <p>全タスク粉砕完了！ドパミン全開！<br>上の入力欄またはプリセットからタスクを追加しよう！</p>
+        <!-- ================= Subtab Pane 3: History (討伐履歴) ================= -->
+        <div id="todo-pane-history" class="todo-subtab-pane">
+          
+          <!-- Today's Stats Summary Box -->
+          <div class="log-summary-grid">
+            <div class="log-stat-card glass-panel">
+              <span class="log-stat-label">本日粉砕数</span>
+              <strong id="subtab-log-today-count" class="log-stat-val" style="color: var(--neon-cyan);">0 個</strong>
+            </div>
+            <div class="log-stat-card glass-panel">
+              <span class="log-stat-label">獲得 Dopa Gems</span>
+              <strong id="subtab-log-today-gems" class="log-stat-val" style="color: var(--neon-green);">💎 +0</strong>
+            </div>
+            <div class="log-stat-card glass-panel">
+              <span class="log-stat-label">獲得 Coins</span>
+              <strong id="subtab-log-today-coins" class="log-stat-val" style="color: var(--neon-gold);">🪙 +0</strong>
+            </div>
+          </div>
+
+          <div class="task-list-title-row" style="margin-top: 10px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--text-muted);">📜 直近の粉砕・討伐ログ（最新50件）:</span>
+          </div>
+
+          <!-- Completed Log List Container -->
+          <div id="subtab-log-items-list" class="log-timeline-container"></div>
+
         </div>
+
       </section>
 
 
@@ -499,6 +591,20 @@
           <div class="gacha-rates-text">N: 60% | R: 25% | SR: 10% | SSR: 4% | UR: 1%</div>
         </div>
 
+        <!-- Reward Ad / Free Gems Support Banner -->
+        <div class="reward-ad-card glass-panel" id="reward-ad-card">
+          <div class="reward-ad-left">
+            <div class="reward-ad-icon">🎁</div>
+            <div class="reward-ad-info">
+              <div class="reward-ad-title">広告応援で無料ジェムGET！</div>
+              <div class="reward-ad-desc">スポンサー応援で <strong style="color: var(--neon-green);">💎 +100 GEMS</strong> 獲得！（本日あと <span id="reward-ad-count-val">3</span> 回）</div>
+            </div>
+          </div>
+          <button id="watch-reward-ad-btn" class="reward-ad-claim-btn">
+            <span>📺 応援してGET</span>
+          </button>
+        </div>
+
         <!-- Current Equipped Weapon -->
         <div class="equipped-weapon-card glass-panel">
           <div class="equipped-header">
@@ -526,6 +632,14 @@
 
     </main>
 
+    <!-- Bottom Sticky Ad Banner -->
+    <div class="bottom-ad-banner" id="bottom-ad-banner">
+      <div class="ad-label-tag-mini">AD</div>
+      <div class="bottom-ad-content">
+        <span>⚡ 広告掲載枠 (Responsive Ad Banner Space) ⚡</span>
+      </div>
+    </div>
+
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-nav-bar">
       <button class="nav-tab-btn active" data-tab="todo">
@@ -545,6 +659,6 @@
   </div>
 
   <!-- JavaScript Modules with Cache-Buster -->
-  <script type="module" src="js/app.js?v=2.2.1"></script>
+  <script type="module" src="js/app.js?v=2.4.0"></script>
 </body>
 </html>

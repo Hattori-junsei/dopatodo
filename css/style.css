@@ -716,3 +716,111 @@ body {
 .whats-new-claim-btn:hover {
   transform: scale(1.05);
 }
+
+/* =====================================================
+   ADVERTISEMENT & REWARD AD STYLES (広告枠デザイン)
+   ===================================================== */
+/* Gacha Section Reward Ad Card */
+.reward-ad-card {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: radial-gradient(circle at 10% 50%, rgba(255, 215, 0, 0.15), rgba(15, 15, 25, 0.9));
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.reward-ad-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reward-ad-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 0 10px #ffd700);
+}
+
+.reward-ad-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reward-ad-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffd700;
+}
+
+.reward-ad-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.reward-ad-claim-btn {
+  background: linear-gradient(135deg, var(--neon-gold), #ff8800);
+  border: none;
+  color: #07070d;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 11px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  white-space: nowrap;
+}
+
+.reward-ad-claim-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+}
+
+.reward-ad-claim-btn:disabled,
+.reward-ad-claim-btn.is-finished {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Sticky Bottom Ad Banner */
+.bottom-ad-banner {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  width: 100vw;
+  background: rgba(7, 7, 13, 0.95);
+  border-top: 1px solid rgba(0, 243, 255, 0.2);
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 95;
+  backdrop-filter: blur(10px);
+}
+
+.ad-label-tag-mini {
+  position: absolute;
+  left: 8px;
+  font-size: 7px;
+  font-weight: 800;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+.bottom-ad-content {
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  font-family: var(--font-display);
+}

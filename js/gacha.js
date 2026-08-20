@@ -14,8 +14,66 @@ export class GachaManager {
 
   init() {
     this.setupEventListeners();
+    this.setupRewardAdUI();
     this.renderInventory();
     this.updateEquippedDisplay();
+  }
+
+  setupRewardAdUI() {
+    const watchAdBtn = document.getElementById('watch-reward-ad-btn');
+    const countVal = document.getElementById('reward-ad-count-val');
+
+    const today = new Date().toISOString().split('T')[0];
+    if (!this.app.state.lastAdDate || this.app.state.lastAdDate !== today) {
+      this.app.state.lastAdDate = today;
+      this.app.state.dailyAdWatches = 0;
+      this.app.saveState();
+    }
+
+    const remaining = Math.max(0, 3 - (this.app.state.dailyAdWatches || 0));
+    if (countVal) countVal.textContent = remaining;
+    if (watchAdBtn) {
+      if (remaining <= 0) {
+        watchAdBtn.disabled = true;
+        watchAdBtn.textContent = '本日分終了 (明日リセット)';
+        watchAdBtn.classList.add('is-finished');
+      } else {
+        watchAdBtn.disabled = false;
+        watchAdBtn.innerHTML = '<span>📺 応援してGET</span>';
+        watchAdBtn.classList.remove('is-finished');
+      }
+    }
+
+    if (watchAdBtn && !watchAdBtn.dataset.listener) {
+      watchAdBtn.dataset.listener = 'true';
+      watchAdBtn.addEventListener('click', () => {
+        const curRemaining = Math.max(0, 3 - (this.app.state.dailyAdWatches || 0));
+        if (curRemaining <= 0) {
+          alert('本日の広告応援ボーナス（3回）はすべて受け取り済みです！\n明日またリセットされます！');
+          return;
+        }
+
+        sound.playLeverOn();
+        watchAdBtn.disabled = true;
+        watchAdBtn.textContent = '⚡ スポンサー応援中...';
+
+        setTimeout(() => {
+          this.app.state.dailyAdWatches = (this.app.state.dailyAdWatches || 0) + 1;
+          this.app.state.gems += 100;
+          this.app.updateHeaderStats();
+          this.app.saveState();
+
+          try {
+            sound.playRainbowFanfare();
+            fx.createRainbowConfetti();
+            fx.flash('rgba(0, 255, 136, 0.5)', 300);
+          } catch (e) {}
+
+          alert('🎉 スポンサー応援完了！\n💎 +100 DOPA GEMS を獲得しました！');
+          this.setupRewardAdUI();
+        }, 1200);
+      });
+    }
   }
 
   setupEventListeners() {

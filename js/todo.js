@@ -6,7 +6,6 @@ import { PRESET_TASKS, TASK_TAGS, DIFFICULTIES } from './data.js';
 export class TodoManager {
   constructor(app) {
     this.app = app;
-    this.feverTimer = null;
     this.focusTimerInterval = null;
     this.focusTimeRemaining = 0;
     this.isFocusTimerActive = false;
@@ -23,6 +22,7 @@ export class TodoManager {
     this.renderPresets();
     this.renderTasks();
     this.renderRoutineWidget();
+    this.setupSubtabs();
     this.setupEventListeners();
     this.setupDueOptionsUI();
     this.setupDueRemindModal();
@@ -379,11 +379,11 @@ export class TodoManager {
         item.style.setProperty('--card-diff-color', diffObj.color);
         item.dataset.id = task.id;
 
-        const feverMult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
-        const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * feverMult);
-        const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * feverMult);
-        const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * feverMult);
-        const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * feverMult);
+        const speedMult = this.isFocusTimerActive ? 1.5 : 1;
+        const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * speedMult);
+        const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * speedMult);
+        const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * speedMult);
+        const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * speedMult);
 
         // Routine Badge
         let routineBadgeText = '🔄 日課';
@@ -467,13 +467,13 @@ export class TodoManager {
     }
   }
 
-  // --- Roulette Reward Roll (ルーレット報酷抽選) ---
-  rollRouletteReward(task, feverMult) {
+  // --- Roulette Reward Roll (ルーレット報酬抽選) ---
+  rollRouletteReward(task, speedMult = 1.0) {
     const diffObj = DIFFICULTIES[task.difficulty || 2] || DIFFICULTIES[2];
-    const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * feverMult);
-    const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * feverMult);
-    const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * feverMult);
-    const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * feverMult);
+    const gemsMin = Math.round((task.gemsMin || diffObj.gemsMin || diffObj.gems * 0.5) * speedMult);
+    const gemsMax = Math.round((task.gemsMax || diffObj.gemsMax || diffObj.gems * 2) * speedMult);
+    const coinsMin = Math.round((task.coinsMin || diffObj.coinsMin || diffObj.coins * 0.5) * speedMult);
+    const coinsMax = Math.round((task.coinsMax || diffObj.coinsMax || diffObj.coins * 2) * speedMult);
 
     const earnedGems = gemsMin + Math.floor(Math.random() * (gemsMax - gemsMin + 1));
     const earnedCoins = coinsMin + Math.floor(Math.random() * (coinsMax - coinsMin + 1));
@@ -578,8 +578,8 @@ export class TodoManager {
     sound.playShatter();
     fx.createShatterFX(x, y);
 
-    const feverMult = (this.app.state.isFever ? 2 : 1) * (this.isFocusTimerActive ? 1.5 : 1);
-    const { earnedGems, earnedCoins, isJackpot } = this.rollRouletteReward(task, feverMult);
+    const speedMult = this.isFocusTimerActive ? 1.5 : 1;
+    const { earnedGems, earnedCoins, isJackpot } = this.rollRouletteReward(task, speedMult);
     const diffObj = DIFFICULTIES[task.difficulty || 2] || DIFFICULTIES[2];
 
     // Show roulette popup at element position
@@ -591,7 +591,6 @@ export class TodoManager {
     this.app.state.coins += earnedCoins;
     this.app.state.comboCount += 1;
     this.app.state.totalCrushed = (this.app.state.totalCrushed || 0) + 1;
-    this.app.state.feverGauge = Math.min(100, this.app.state.feverGauge + 25);
 
     const today = new Date().toISOString().split('T')[0];
     if (!this.app.state.todayStats || this.app.state.todayStats.date !== today) {
@@ -618,10 +617,6 @@ export class TodoManager {
 
     this.app.state.tasks = this.app.state.tasks.filter(t => t.id !== task.id);
     this.app.checkAchievements();
-
-    if (this.app.state.feverGauge >= 100 && !this.app.state.isFever) {
-      this.triggerFever();
-    }
 
     this.app.updateHeaderStats();
     this.updateComboUI();
@@ -995,59 +990,14 @@ export class TodoManager {
     });
   }
 
-  // --- Fever Mode & Focus Timer ---
-  triggerFever() {
-    this.app.state.isFever = true;
-    this.app.state.feverTimeLeft = 20;
-    sound.playFever();
-    fx.flash('rgba(255, 0, 127, 0.4)', 400);
-    fx.createRainbowConfetti();
-
-    const feverBanner = document.getElementById('fever-banner');
-    if (feverBanner) feverBanner.classList.add('active');
-    document.body.classList.add('fever-active');
-
-    if (this.feverTimer) clearInterval(this.feverTimer);
-    this.feverTimer = setInterval(() => {
-      this.app.state.feverTimeLeft--;
-      this.updateComboUI();
-
-      if (this.app.state.feverTimeLeft <= 0) {
-        clearInterval(this.feverTimer);
-        this.feverTimer = null;
-        this.app.state.isFever = false;
-        this.app.state.feverGauge = 0;
-        document.body.classList.remove('fever-active');
-        if (feverBanner) feverBanner.classList.remove('active');
-        this.updateComboUI();
-        this.renderTasks();
-      }
-    }, 1000);
-  }
-
+  // --- Combo & Stats UI ---
   updateComboUI() {
     const comboEl = document.getElementById('combo-display');
-    const gaugeFill = document.getElementById('fever-gauge-fill');
-    const feverTimeEl = document.getElementById('fever-time-display');
-
     if (comboEl) {
-      comboEl.textContent = `${this.app.state.comboCount} COMBO`;
-      if (this.app.state.comboCount > 0) {
+      comboEl.textContent = `${this.app.state.comboCount || 0} COMBO`;
+      if ((this.app.state.comboCount || 0) > 0) {
         comboEl.classList.add('combo-bounce');
         setTimeout(() => comboEl.classList.remove('combo-bounce'), 200);
-      }
-    }
-
-    if (gaugeFill) {
-      gaugeFill.style.width = `${this.app.state.feverGauge}%`;
-    }
-
-    if (feverTimeEl) {
-      if (this.app.state.isFever) {
-        feverTimeEl.style.display = 'inline-block';
-        feverTimeEl.textContent = `🔥 FEVER TIME! 残り ${this.app.state.feverTimeLeft}s (報酬2倍)`;
-      } else {
-        feverTimeEl.style.display = 'none';
       }
     }
   }
@@ -1114,14 +1064,227 @@ export class TodoManager {
     text.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  openLogModal() {
-    const modal = document.getElementById('log-modal');
-    const countEl = document.getElementById('log-today-count');
-    const gemsEl = document.getElementById('log-today-gems');
-    const coinsEl = document.getElementById('log-today-coins');
-    const listEl = document.getElementById('log-items-list');
+  // =====================================================
+  // SUB-TAB NAVIGATION SYSTEM (いま粉砕 / 定期日課 / 討伐履歴)
+  // =====================================================
+  setupSubtabs() {
+    const subtabBtns = document.querySelectorAll('.todo-subtab-btn');
+    const panes = document.querySelectorAll('.todo-subtab-pane');
 
-    if (!modal) return;
+    const switchSubtab = (targetTab) => {
+      subtabBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.subtab === targetTab);
+      });
+      panes.forEach(pane => {
+        pane.classList.toggle('active', pane.id === `todo-pane-${targetTab}`);
+      });
+
+      if (targetTab === 'routines') {
+        this.renderSubtabRoutineList();
+      } else if (targetTab === 'history') {
+        this.renderSubtabHistoryList();
+      } else if (targetTab === 'tasks') {
+        this.renderTasks();
+      }
+    };
+
+    subtabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.subtab;
+        switchSubtab(tab);
+        sound.playTap();
+      });
+    });
+
+    // Subtab Routine Add Form logic
+    const addBtn = document.getElementById('subtab-add-routine-btn');
+    const syncBtn = document.getElementById('subtab-sync-routine-btn');
+    const freqSelect = document.getElementById('subtab-routine-freq-select');
+    const freqSubContainer = document.getElementById('subtab-routine-freq-sub-wrap');
+    const freqSubSelect = document.getElementById('subtab-routine-freq-sub-select');
+
+    const updateSubtabFreqUI = () => {
+      if (!freqSelect || !freqSubContainer || !freqSubSelect) return;
+      const freq = freqSelect.value;
+      if (freq === 'weekly') {
+        freqSubContainer.style.display = 'block';
+        freqSubSelect.innerHTML = `
+          <option value="1">月曜日</option>
+          <option value="2">火曜日</option>
+          <option value="3">水曜日</option>
+          <option value="4">木曜日</option>
+          <option value="5">金曜日</option>
+          <option value="6">土曜日</option>
+          <option value="0">日曜日</option>
+        `;
+      } else if (freq === 'monthly') {
+        freqSubContainer.style.display = 'block';
+        let optionsHtml = '';
+        for (let d = 1; d <= 31; d++) {
+          optionsHtml += `<option value="${d}">毎月 ${d} 日</option>`;
+        }
+        freqSubSelect.innerHTML = optionsHtml;
+      } else {
+        freqSubContainer.style.display = 'none';
+      }
+    };
+
+    if (freqSelect) {
+      freqSelect.addEventListener('change', updateSubtabFreqUI);
+      updateSubtabFreqUI();
+    }
+
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const textInput = document.getElementById('subtab-routine-text-input');
+        const diffSelect = document.getElementById('subtab-routine-diff-select');
+        const tagSelect = document.getElementById('subtab-routine-tag-select');
+        const timeInput = document.getElementById('subtab-routine-time-input');
+
+        const text = textInput ? textInput.value.trim() : '';
+        if (!text) {
+          alert('日課の名前を入力してください。');
+          return;
+        }
+
+        const freq = freqSelect ? freqSelect.value : 'daily';
+        let freqDay = 0;
+        if (freq === 'weekly' || freq === 'monthly') {
+          freqDay = freqSubSelect ? parseInt(freqSubSelect.value, 10) : 1;
+        }
+
+        const newRoutine = {
+          id: 'r_' + Date.now(),
+          text,
+          difficulty: diffSelect ? parseInt(diffSelect.value, 10) : 3,
+          tag: tagSelect ? tagSelect.value : 'health',
+          freqType: freq,
+          freqDay: freqDay,
+          time: (timeInput && timeInput.value) ? timeInput.value : '08:00',
+          enabled: true,
+          lastAddedDate: ''
+        };
+
+        if (!Array.isArray(this.app.state.routines)) this.app.state.routines = [];
+        this.app.state.routines.push(newRoutine);
+        this.app.saveState();
+        if (textInput) textInput.value = '';
+        sound.playCoin();
+        this.renderSubtabRoutineList();
+        this.checkAndApplyRoutines();
+      });
+    }
+
+    if (syncBtn) {
+      syncBtn.addEventListener('click', () => {
+        this.checkAndApplyRoutines();
+        sound.playRainbowFanfare();
+        alert('🔄 定期ルーティンの同期チェックを行いました！');
+        this.renderSubtabRoutineList();
+      });
+    }
+  }
+
+  // --- Render Routines in Subtab ---
+  renderSubtabRoutineList() {
+    const container = document.getElementById('subtab-routine-items-list');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const routines = this.app.state.routines || [];
+    if (routines.length === 0) {
+      container.innerHTML = '<div class="empty-log-msg">定期日課が登録されていません。上のフォームから新しい日課を登録しよう！</div>';
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    routines.forEach(r => {
+      const diffObj = DIFFICULTIES[r.difficulty || 3] || DIFFICULTIES[3];
+      const tagObj = TASK_TAGS.find(t => t.id === r.tag) || { label: '一般', icon: '📝' };
+      const freqLabel = this.getRoutineFreqLabel(r);
+
+      const isPending = (this.app.state.tasks || []).some(t => t.routineId === r.id && !t.completed);
+      let statusHtml = '';
+      if (!r.enabled) {
+        statusHtml = '<span class="routine-status-pill status-disabled">停止中</span>';
+      } else if (isPending) {
+        statusHtml = '<span class="routine-status-pill status-pending">⚡ ToDo追加済</span>';
+      } else if (r.lastAddedDate === today) {
+        statusHtml = '<span class="routine-status-pill status-added">✅ 本日追加済み</span>';
+      } else {
+        statusHtml = `<span class="routine-status-pill status-ready">⏰ ${freqLabel} 予定</span>`;
+      }
+
+      const item = document.createElement('div');
+      item.className = `routine-item glass-panel ${!r.enabled ? 'is-disabled' : ''}`;
+
+      item.innerHTML = `
+        <div class="routine-item-info">
+          <div class="routine-meta-row">
+            <span class="task-diff-pill" style="border-color: ${diffObj.color}; color: ${diffObj.color};">
+              ${diffObj.stars} ${diffObj.label}
+            </span>
+            <span class="task-category-pill">${tagObj.icon} ${tagObj.label}</span>
+            <span class="routine-time-tag">🔄 ${freqLabel}</span>
+            ${statusHtml}
+          </div>
+          <div class="routine-title">${r.text}</div>
+        </div>
+        <div class="routine-actions">
+          ${!isPending && r.enabled ? '<button class="routine-chip-action-btn subtab-summon-btn" style="margin-right: 4px;">+今すぐやる</button>' : ''}
+          <label class="switch" title="有効/無効">
+            <input type="checkbox" class="routine-toggle" ${r.enabled ? 'checked' : ''}>
+            <span class="slider"></span>
+          </label>
+          <button class="delete-btn routine-del-btn" title="日課を削除">🗑️</button>
+        </div>
+      `;
+
+      const summonBtn = item.querySelector('.subtab-summon-btn');
+      if (summonBtn) {
+        summonBtn.addEventListener('click', () => {
+          this.addTask(r.text, r.difficulty || 3, r.tag || 'health', r.id);
+          r.lastAddedDate = today;
+          this.app.saveState();
+          sound.playCoin();
+          this.renderSubtabRoutineList();
+          alert(`⚡ タスク「${r.text}」をToDoに追加しました！「いま粉砕」タブで粉砕しよう！`);
+        });
+      }
+
+      const toggle = item.querySelector('.routine-toggle');
+      if (toggle) {
+        toggle.addEventListener('change', (e) => {
+          r.enabled = e.target.checked;
+          sound.playTap();
+          this.app.saveState();
+          this.renderSubtabRoutineList();
+        });
+      }
+
+      const delBtn = item.querySelector('.routine-del-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', () => {
+          if (confirm(`日課「${r.text}」を削除しますか？`)) {
+            this.app.state.routines = this.app.state.routines.filter(itemR => itemR.id !== r.id);
+            sound.playTap();
+            this.app.saveState();
+            this.renderSubtabRoutineList();
+          }
+        });
+      }
+
+      container.appendChild(item);
+    });
+  }
+
+  // --- Render History in Subtab ---
+  renderSubtabHistoryList() {
+    const countEl = document.getElementById('subtab-log-today-count');
+    const gemsEl = document.getElementById('subtab-log-today-gems');
+    const coinsEl = document.getElementById('subtab-log-today-coins');
+    const listEl = document.getElementById('subtab-log-items-list');
 
     const today = new Date().toISOString().split('T')[0];
     if (!this.app.state.todayStats || this.app.state.todayStats.date !== today) {
@@ -1139,7 +1302,7 @@ export class TodoManager {
       } else {
         this.app.state.completedLog.forEach(item => {
           const row = document.createElement('div');
-          row.className = 'log-item-row';
+          row.className = 'log-item-row glass-panel';
           const timeStr = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           const diffObj = DIFFICULTIES[item.difficulty || 2] || DIFFICULTIES[2];
 
@@ -1158,7 +1321,5 @@ export class TodoManager {
         });
       }
     }
-
-    modal.classList.add('active');
   }
 }
